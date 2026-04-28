@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0d3320">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="নার্সারি রেজিস্ট্রি">
+<title>বাংলাদেশ নার্সারি রেজিস্ট্রি · DAE</title>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="apple-touch-icon" type="image/png" sizes="180x180" href="favicon.png">
+<meta name="description" content="বাংলাদেশ নার্সারি রেজিস্ট্রি - কৃষি সম্প্রসারণ অধিদপ্তর (DAE) এর সারা দেশের নার্সারি তথ্য ও GIS ম্যাপ">
+
+<!-- Open Graph / Facebook / Messenger / WhatsApp -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="বাংলাদেশ নার্সারি রেজিস্ট্রি · DAE">
+<meta property="og:description" content="কৃষি সম্প্রসারণ অধিদপ্তর (DAE) এর সারা দেশের নার্সারি তথ্য, চারার পরিমাণ, GPS লোকেশন ও যোগাযোগের তথ্য সম্বলিত GIS প্ল্যাটফর্ম।">
+<meta property="og:image" content="favicon.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta property="og:locale" content="bn_BD">
+<meta property="og:site_name" content="DAE Nursery Registry">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="বাংলাদেশ নার্সারি রেজিস্ট্রি · DAE">
+<meta name="twitter:description" content="কৃষি সম্প্রসারণ অধিদপ্তর (DAE) এর সারা দেশের নার্সারি তথ্য, চারার পরিমাণ, GPS লোকেশন ও যোগাযোগের তথ্য সম্বলিত GIS প্ল্যাটফর্ম।">
+<meta name="twitter:image" content="favicon.png">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root{
+  --ink:    #0d1f15;
+  --ink2:   #2a4035;
+  --ink3:   #4a6858;
+  --border: #c3ddd0;
+  --bg:     #f0f7f3;
+  --bg2:    #e2f0e8;
+  --leaf:   #0d3320;
+  --leaf2:  #1a5c38;
+  --leaf3:  #2e8b57;
+  --leaf4:  #52b07a;
+  --leaf5:  #a8dbbe;
+  --amber:  #d97706;
+  --amber2: #fef3c7;
+  --red:    #c0392b;
+  --red2:   #fde8e8;
+  --blue:   #1d6ea6;
+  --white:  #ffffff;
+  --card-r: 10px;
+  --shadow: 0 1px 8px rgba(13,51,32,.10);
+  --shadow2:0 4px 20px rgba(13,51,32,.16);
+  --font:   'Noto Serif Bengali',serif;
+  --mono:   'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink)}
+
+/* ── SHELL ───────────────────────────────────────────────── */
+#shell{display:flex;flex-direction:column;height:100dvh;height:100vh}
+
+/* ── TOPBAR ─────────────────────────────────────────────── */
+#topbar{
+  background:var(--leaf);
+  height:54px;padding:0 14px;
+  display:flex;align-items:center;gap:10px;
+  flex-shrink:0;z-index:600;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.tb-leaf{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--leaf2),var(--leaf3));
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
+.tb-title{flex:1;color:#fff;line-height:1.2}
+.tb-title strong{display:block;font-size:14px;font-weight:700;letter-spacing:.2px}
+.tb-title span{display:block;font-size:10px;color:var(--leaf5);font-weight:400;font-family:var(--mono)}
+.tb-search{
+  position:relative;display:flex;align-items:center;
+}
+#searchbox{
+  background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+  border-radius:22px;padding:7px 34px 7px 13px;color:#fff;
+  font-family:var(--font);font-size:13px;outline:none;width:170px;
+  transition:all .25s;
+}
+#searchbox::placeholder{color:rgba(255,255,255,.45)}
+#searchbox:focus{background:rgba(255,255,255,.2);width:210px;border-color:var(--leaf5)}
+.tb-search-ico{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  color:rgba(255,255,255,.45);font-size:13px;pointer-events:none}
+#notif-btn{
+  background:none;border:none;cursor:pointer;color:var(--leaf5);
+  font-size:18px;padding:4px;flex-shrink:0;position:relative;
+  transition:color .2s;
+}
+#notif-btn:hover{color:#fff}
+#notif-badge{
+  position:absolute;top:0;right:0;background:var(--amber);color:#fff;
+  font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--leaf);padding:0 3px;
+}
+
+/* ── TABS ────────────────────────────────────────────────── */
+#tabbar{
+  background:var(--leaf);
+  display:flex;border-top:1px solid rgba(255,255,255,.1);
+  flex-shrink:0;
+}
+.tab{
+  flex:1;padding:9px 4px 8px;text-align:center;cursor:pointer;
+  color:rgba(255,255,255,.5);font-size:10px;font-weight:600;
+  border-bottom:2px solid transparent;transition:all .2s;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:var(--font);
+}
+.tab .ti{display:block;font-size:17px;margin-bottom:2px}
+.tab.on{color:#fff;border-bottom-color:var(--leaf4)}
+
+/* ── BODY AREA ───────────────────────────────────────────── */
+#body{flex:1;display:flex;overflow:hidden;position:relative}
+
+/* ── MAP ─────────────────────────────────────────────────── */
+#mapview{flex:1;position:relative;z-index:1}
+#map{width:100%;height:100%}
+.leaflet-container{font-family:var(--font)!important}
+.leaflet-popup-content-wrapper{border-radius:12px!important;box-shadow:var(--shadow2)!important;font-family:var(--font)!important}
+.leaflet-popup-content{margin:12px 14px!important}
+
+/* ── LEGEND ─────────────────────────────────────────────── */
+#map-legend{
+  position:absolute;bottom:16px;left:12px;z-index:400;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(6px);
+  border-radius:8px;padding:8px 11px;box-shadow:var(--shadow);
+  font-size:10px;border:1px solid var(--border);
+}
+.lg-row{display:flex;align-items:center;gap:6px;padding:2px 0;color:var(--ink3)}
+.lg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(0,0,0,.15)}
+.lg-count{font-family:var(--mono);color:var(--ink2);font-weight:500;margin-left:auto;padding-left:8px}
+
+/* ── MAP FILTER BAR ─────────────────────────────────────── */
+#map-filters{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  z-index:400;display:flex;gap:5px;
+}
+.mf-btn{
+  background:rgba(255,255,255,.94);backdrop-filter:blur(6px);
+  border:1px solid var(--border);border-radius:18px;
+  padding:5px 12px;font-family:var(--font);font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .18s;color:var(--ink2);box-shadow:var(--shadow);
+  white-space:nowrap;
+}
+.mf-btn.on{background:var(--leaf2);color:#fff;border-color:var(--leaf2)}
+
+/* ── SIDE PANEL ─────────────────────────────────────────── */
+#panel{
+  width:360px;flex-shrink:0;background:var(--white);
+  display:flex;flex-direction:column;
+  border-left:1px solid var(--border);z-index:2;overflow:hidden;
+}
+@media(max-width:700px){
+  #body{flex-direction:column}
+  #mapview{height:40vh;flex:none}
+  #panel{width:100%;flex:1;border-left:none;border-top:1px solid var(--border)}
+}
+
+/* ── UPAZILA PILLS ───────────────────────────────────────── */
+#upazila-bar{
+  display:flex;overflow-x:auto;padding:8px 8px 6px;gap:5px;
+  background:var(--bg);border-bottom:1px solid var(--border);
+  flex-shrink:0;scrollbar-width:none;
+}
+#upazila-bar::-webkit-scrollbar{display:none}
+.up-pill{
+  padding:4px 11px;border-radius:16px;white-space:nowrap;cursor:pointer;
+  font-size:11px;font-weight:600;border:1.5px solid var(--border);
+  background:var(--white);color:var(--ink3);transition:all .16s;flex-shrink:0;
+}
+.up-pill.on{background:var(--leaf2);color:#fff;border-color:var(--leaf2)}
+.up-pill .uc{font-family:var(--mono);font-size:10px;opacity:.75;margin-left:3px}
+
+/* ── FILTER CHIPS ───────────────────────────────────────── */
+#filter-row{
+  display:flex;gap:5px;padding:6px 8px;
+  background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;
+  flex-wrap:wrap;align-items:center;
+}
+.fc{
+  padding:3px 10px;border-radius:14px;font-size:10px;font-weight:700;
+  border:1px solid var(--border);background:var(--white);color:var(--ink3);
+  cursor:pointer;transition:all .15s;
+}
+.fc.on{background:var(--leaf2);color:#fff;border-color:var(--leaf2)}
+.fc.warn.on{background:var(--amber);border-color:var(--amber)}
+.fc.danger.on{background:var(--red);border-color:var(--red)}
+#sort-sel{
+  margin-left:auto;font-family:var(--font);font-size:10px;padding:3px 8px;
+  border:1px solid var(--border);border-radius:14px;background:var(--white);
+  color:var(--ink2);outline:none;cursor:pointer;
+}
+
+/* ── LIST ───────────────────────────────────────────────── */
+#list-wrap{flex:1;overflow-y:auto;padding:7px;display:flex;flex-direction:column;gap:5px}
+#list-wrap::-webkit-scrollbar{width:3px}
+#list-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.ncard{
+  border:1px solid var(--border);border-radius:var(--card-r);
+  padding:10px 12px;cursor:pointer;transition:all .15s;
+  border-left:3px solid var(--border);background:var(--white);
+  animation:fadeUp .18s ease both;
+}
+.ncard:hover{box-shadow:var(--shadow);border-color:var(--leaf4)}
+.ncard.sel{border-color:var(--leaf2);background:var(--bg);box-shadow:var(--shadow2)}
+.ncard.c-ok   {border-left-color:var(--leaf3)}
+.ncard.c-mob  {border-left-color:var(--amber)}
+.ncard.c-gps  {border-left-color:var(--red)}
+.ncard.c-both {border-left-color:#9b59b6}
+
+.nc-top{display:flex;align-items:flex-start;gap:7px;margin-bottom:5px}
+.nc-sl{
+  background:var(--leaf);color:#fff;font-size:9px;font-weight:700;
+  font-family:var(--mono);border-radius:4px;padding:2px 6px;flex-shrink:0;
+}
+.nc-name{font-size:12px;font-weight:700;color:var(--ink);line-height:1.3;flex:1}
+.nc-upz{
+  font-size:9px;color:var(--ink3);background:var(--bg2);
+  border:1px solid var(--border);border-radius:4px;padding:1px 5px;
+  white-space:nowrap;flex-shrink:0;
+}
+.nc-meta{display:flex;flex-wrap:wrap;gap:3px}
+
+.chip{
+  display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:600;
+  padding:2px 7px;border-radius:9px;
+}
+.chip-g{background:var(--bg2);color:var(--leaf2)}
+.chip-a{background:var(--amber2);color:#92400e}
+.chip-r{background:var(--red2);color:var(--red)}
+.chip-b{background:#e0f2fe;color:#075985}
+.chip-p{background:#f3e8ff;color:#6b21a8}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.empty{text-align:center;padding:40px 16px;color:var(--ink3)}
+.empty .eico{font-size:42px;margin-bottom:12px}
+.empty p{font-size:13px;line-height:1.5}
+
+/* ── PANE SHARED ────────────────────────────────────────── */
+.pane{display:none;flex-direction:column;flex:1;overflow-y:auto;padding:14px;gap:11px}
+.pane.on{display:flex}
+.pane::-webkit-scrollbar{width:3px}
+.pane::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.pane-back{
+  width:34px;height:34px;background:var(--bg);border:1px solid var(--border);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:16px;flex-shrink:0;transition:all .15s;
+}
+.pane-back:hover{background:var(--bg2);border-color:var(--leaf4)}
+
+.section-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--card-r);padding:12px}
+.section-box h3{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;
+  letter-spacing:.6px;margin-bottom:9px;display:flex;align-items:center;gap:5px}
+.kv{display:flex;align-items:center;justify-content:space-between;
+  padding:4px 0;border-bottom:1px solid var(--border)}
+.kv:last-child{border:none}
+.kv-k{font-size:11px;color:var(--ink3)}
+.kv-v{font-size:11px;font-weight:700;color:var(--ink);text-align:right;max-width:200px}
+
+.species-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;
+  border-bottom:1px solid var(--border)}
+.species-row:last-child{border:none}
+.species-row span{color:var(--ink3)}
+.species-row b{font-family:var(--mono);color:var(--leaf2)}
+
+/* ── DETAIL ─────────────────────────────────────────────── */
+#det-pane .det-hd{display:flex;gap:9px;align-items:flex-start}
+#det-pane .det-ttl{font-size:15px;font-weight:700;color:var(--ink);line-height:1.3;flex:1}
+#det-pane .det-sub{font-size:11px;color:var(--ink3);margin-top:3px}
+.action-row{display:flex;gap:7px}
+.btn-p{
+  flex:1;background:var(--leaf2);color:#fff;border:none;border-radius:8px;
+  padding:11px;font-family:var(--font);font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;box-shadow:0 2px 8px rgba(26,92,56,.25);
+}
+.btn-p:hover{background:var(--leaf)}
+.btn-p:active{transform:scale(.97)}
+.btn-s{
+  background:var(--bg);color:var(--ink2);border:1.5px solid var(--border);
+  border-radius:8px;padding:11px 14px;font-family:var(--font);font-size:13px;
+  cursor:pointer;transition:all .15s;
+}
+.btn-s:hover{border-color:var(--leaf4)}
+.btn-call{background:#1d6ea6;color:#fff;border:none;border-radius:8px;
+  padding:11px 14px;font-family:var(--font);font-size:13px;cursor:pointer;transition:background .15s}
+.btn-call:hover{background:#155d8f}
+
+/* ── EDIT FORM ───────────────────────────────────────────── */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.5px}
+.fl-req{color:var(--amber);margin-left:3px}
+.fi{
+  font-family:var(--font);font-size:14px;padding:10px 12px;
+  border:1.5px solid var(--border);border-radius:8px;
+  background:var(--white);color:var(--ink);outline:none;transition:border-color .2s;
+}
+.fi:focus{border-color:var(--leaf2)}
+.fi.hl{border-color:var(--amber);background:#fffdf0}
+.fhint{font-size:10px;color:var(--ink3);line-height:1.4}
+.gps-row{display:flex;gap:7px}
+.gps-row .fi{flex:1;font-family:var(--mono);font-size:12px}
+.gps-grab{
+  background:var(--leaf2);color:#fff;border:none;border-radius:8px;
+  padding:10px 13px;font-size:19px;cursor:pointer;transition:background .15s;flex-shrink:0;
+}
+.gps-grab:hover{background:var(--leaf)}
+.gps-grab:active{transform:scale(.93)}
+#gps-status{font-size:10px;min-height:15px;color:var(--ink3);line-height:1.4}
+#gps-status.ok{color:var(--leaf2);font-weight:600}
+#gps-status.err{color:var(--red)}
+
+/* ── UPAZILA PANE ────────────────────────────────────────── */
+.up-card{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--card-r);
+  padding:11px 13px;cursor:pointer;transition:all .16s;
+}
+.up-card:hover{box-shadow:var(--shadow);border-color:var(--leaf4)}
+.up-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.up-card-name{font-size:13px;font-weight:700;color:var(--ink)}
+.progress-track{height:5px;background:var(--bg2);border-radius:3px;margin:5px 0 7px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--leaf2),var(--leaf4));
+  border-radius:3px;transition:width 1.2s ease}
+.up-stats{display:flex;flex-wrap:wrap;gap:6px}
+.us{font-size:10px;color:var(--ink3)}
+.us b{color:var(--ink2);font-weight:700}
+
+/* ── MISSING PANE ────────────────────────────────────────── */
+.miss-card{
+  background:var(--white);border:1.5px solid var(--amber2);border-radius:var(--card-r);
+  padding:11px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:all .15s;
+}
+.miss-card:hover{border-color:var(--amber);box-shadow:var(--shadow)}
+.miss-icon{font-size:22px;flex-shrink:0}
+.miss-info{flex:1;min-width:0}
+.miss-name{font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.miss-sub{font-size:10px;color:var(--ink3);margin-top:2px}
+.miss-btn{
+  background:var(--amber);color:#fff;border:none;border-radius:7px;
+  padding:7px 11px;font-family:var(--font);font-size:11px;font-weight:700;
+  cursor:pointer;white-space:nowrap;transition:background .15s;flex-shrink:0;
+}
+.miss-btn:hover{background:#b45309}
+
+/* ── POPUP ───────────────────────────────────────────────── */
+.pop-name{font-size:13px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:3px}
+.pop-sub{font-size:10px;color:var(--ink3);margin-bottom:8px}
+.pop-row{font-size:11px;display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.pop-row .pl{color:var(--ink3);min-width:20px}
+.pop-row .pv{color:var(--ink2);font-weight:600}
+.pop-actions{display:flex;gap:6px;margin-top:9px}
+.pa{flex:1;padding:7px;border-radius:7px;border:none;font-family:var(--font);
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;text-align:center;text-decoration:none;display:block}
+.pa-g{background:var(--leaf2);color:#fff}
+.pa-w{background:var(--bg2);color:var(--leaf);border:1px solid var(--border)}
+.pa:hover{opacity:.85}
+
+/* ── TOAST ───────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--ink);color:#fff;padding:10px 20px;border-radius:22px;
+  font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;
+  pointer-events:none;white-space:nowrap;box-shadow:var(--shadow2);max-width:90vw;
+}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── FAB ─────────────────────────────────────────────────── */
+#fab{
+  position:fixed;bottom:20px;right:16px;z-index:500;
+  width:52px;height:52px;border-radius:50%;background:var(--leaf2);color:#fff;
+  font-size:26px;border:none;cursor:pointer;box-shadow:var(--shadow2);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;line-height:1;
+}
+#fab:hover{background:var(--leaf);transform:scale(1.06)}
+#fab:active{transform:scale(.91)}
+#fab-badge{
+  position:absolute;top:-3px;right:-3px;background:var(--amber);color:#fff;
+  font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid #fff;padding:0 3px;font-family:var(--mono);
+}
+
+/* ── EXPORT BAR ─────────────────────────────────────────── */
+#export-bar{
+  padding:8px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;
+  display:flex;gap:6px;
+}
+.exp-btn{
+  flex:1;padding:8px;background:var(--leaf);color:#fff;border:none;
+  border-radius:7px;font-family:var(--font);font-size:11px;font-weight:700;
+  cursor:pointer;transition:background .15s;
+}
+.exp-btn:hover{background:var(--leaf2)}
+.exp-btn.sec{background:var(--white);color:var(--ink2);border:1.5px solid var(--border)}
+.exp-btn.sec:hover{border-color:var(--leaf4)}
+
+/* ── STATUS INDICATOR ───────────────────────────────────── */
+#sync-bar{
+  padding:5px 12px;background:var(--leaf);color:var(--leaf5);
+  font-size:10px;text-align:center;font-family:var(--mono);flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+</style>
+</head>
+<body>
+<div id="shell">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div class="tb-leaf">🌿</div>
+    <div class="tb-title">
+      <strong>বাংলাদেশ নার্সারি রেজিস্ট্রি</strong>
+      <span>DAE · GIS PWA · ২০২৬</span>
+    </div>
+    <div class="tb-search">
+      <input id="searchbox" type="search" placeholder="নার্সারি খুঁজুন..." autocomplete="off" spellcheck="false">
+      <span class="tb-search-ico">🔍</span>
+    </div>
+    <button id="notif-btn" title="মোবাইল নেই">
+      📞
+      <div id="notif-badge">0</div>
+    </button>
+  </div>
+
+  <!-- SYNC BAR -->
+  <div id="sync-bar" id="sync-bar">● অফলাইন মোড · সব ডেটা ডিভাইসে সংরক্ষিত · আপডেট: এপ্রিল ২০২৬</div>
+
+  <!-- TAB BAR -->
+  <div id="tabbar">
+    <button class="tab on" id="tab-map" onclick="setTab('map')">
+      <span class="ti">🗺️</span>ম্যাপ
+    </button>
+    <button class="tab" id="tab-list" onclick="setTab('list')">
+      <span class="ti">📋</span>তালিকা
+    </button>
+    <button class="tab" id="tab-missing" onclick="setTab('missing')">
+      <span class="ti">📞</span>মোবাইল নেই
+    </button>
+    <button class="tab" id="tab-upazila" onclick="setTab('upazila')">
+      <span class="ti">📊</span>উপজেলা
+    </button>
+  </div>
+
+  <!-- BODY -->
+  <div id="body">
+
+    <!-- MAP VIEW -->
+    <div id="mapview">
+      <div id="map"></div>
+      <div id="map-filters">
+        <button class="mf-btn on" id="mf-all" onclick="setMapFilter('all')">সব</button>
+        <button class="mf-btn" id="mf-ok" onclick="setMapFilter('ok')">✅ সম্পূর্ণ</button>
+        <button class="mf-btn" id="mf-nomob" onclick="setMapFilter('nomob')">📞 মোবাইল নেই</button>
+        <button class="mf-btn" id="mf-nogps" onclick="setMapFilter('nogps')">📍 GPS নেই</button>
+      </div>
+      <div id="map-legend">
+        <div class="lg-row">
+          <div class="lg-dot" style="background:#2e8b57"></div>GPS + মোবাইল
+          <span class="lg-count" id="lc-ok">0</span>
+        </div>
+        <div class="lg-row">
+          <div class="lg-dot" style="background:#d97706"></div>মোবাইল নেই
+          <span class="lg-count" id="lc-mob">0</span>
+        </div>
+        <div class="lg-row">
+          <div class="lg-dot" style="background:#c0392b"></div>GPS নেই
+          <span class="lg-count" id="lc-gps">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL -->
+    <div id="panel">
+
+      <!-- UPAZILA PILLS -->
+      <div id="upazila-bar"></div>
+
+      <!-- FILTER ROW -->
+      <div id="filter-row">
+        <button class="fc on" id="fc-all" onclick="setFilter('all')">সব</button>
+        <button class="fc warn" id="fc-nomob" onclick="setFilter('nomob')">📞 মোবাইল নেই</button>
+        <button class="fc danger" id="fc-nogps" onclick="setFilter('nogps')">📍 GPS নেই</button>
+        <select id="sort-sel" onchange="reSort()">
+          <option value="sl">ক্রম</option>
+          <option value="total">বেশি চারা</option>
+          <option value="name">নাম</option>
+          <option value="miss">অসম্পূর্ণ আগে</option>
+        </select>
+      </div>
+
+      <!-- LIST PANE -->
+      <div id="list-pane" class="pane on" style="padding:7px">
+        <div id="list-wrap"></div>
+      </div>
+
+      <!-- DETAIL PANE -->
+      <div id="det-pane" class="pane">
+        <div class="det-hd">
+          <div class="pane-back" onclick="closeDet()">←</div>
+          <div style="flex:1">
+            <div class="det-ttl" id="d-name"></div>
+            <div class="det-sub" id="d-sub"></div>
+          </div>
+        </div>
+        <div class="section-box">
+          <h3>📍 লোকেশন</h3>
+          <div class="kv"><span class="kv-k">অক্ষাংশ</span><span class="kv-v" id="d-lat" style="font-family:var(--mono)"></span></div>
+          <div class="kv"><span class="kv-k">দ্রাঘিমাংশ</span><span class="kv-v" id="d-lon" style="font-family:var(--mono)"></span></div>
+          <div class="kv"><span class="kv-k">GPS স্ট্যাটাস</span><span class="kv-v" id="d-gps"></span></div>
+        </div>
+        <div class="section-box">
+          <h3>📞 যোগাযোগ</h3>
+          <div class="kv"><span class="kv-k">মোবাইল</span><span class="kv-v" id="d-mobile"></span></div>
+          <div class="kv"><span class="kv-k">ঠিকানা</span><span class="kv-v" id="d-addr"></span></div>
+        </div>
+        <div class="section-box">
+          <h3>🌱 চারার সারসংক্ষেপ</h3>
+          <div class="kv"><span class="kv-k">ফলদ</span><span class="kv-v" id="d-falod"></span></div>
+          <div class="kv"><span class="kv-k">বনজ</span><span class="kv-v" id="d-bonaj"></span></div>
+          <div class="kv"><span class="kv-k">ঔষধি</span><span class="kv-v" id="d-oushodhi"></span></div>
+          <div class="kv"><span class="kv-k">মোট</span><span class="kv-v" id="d-total" style="color:var(--leaf2);font-size:14px"></span></div>
+        </div>
+        <div class="section-box" id="d-species-box" style="display:none">
+          <h3>🌿 প্রধান প্রজাতি</h3>
+          <div id="d-species"></div>
+        </div>
+        <div class="action-row">
+          <button class="btn-p" onclick="openEdit(curN)">✏️ তথ্য আপডেট</button>
+          <button class="btn-call" id="d-call" onclick="callNum()" style="display:none">📞 কল</button>
+        </div>
+        <button class="btn-s" onclick="flyTo(curN)" style="width:100%">🗺️ ম্যাপে দেখুন</button>
+      </div>
+
+      <!-- EDIT PANE -->
+      <div id="edit-pane" class="pane">
+        <div class="det-hd">
+          <div class="pane-back" onclick="closeEdit()">←</div>
+          <div>
+            <div class="det-ttl">তথ্য আপডেট করুন</div>
+            <div class="det-sub" id="edit-sub"></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">নার্সারির নাম ও মালিক</label>
+          <input class="fi" id="f-name" type="text" placeholder="নাম লিখুন...">
+        </div>
+        <div class="fg">
+          <label class="fl">ঠিকানা / গ্রাম</label>
+          <input class="fi" id="f-addr" type="text" placeholder="গ্রাম, ইউনিয়ন...">
+        </div>
+        <div class="fg">
+          <label class="fl">📞 মোবাইল নম্বর<span class="fl-req">★</span></label>
+          <input class="fi hl" id="f-mobile" type="tel" placeholder="০১XXXXXXXXX" inputmode="numeric" maxlength="11">
+          <span class="fhint">১১ সংখ্যার নম্বর দিন · ০১৭XXXXXXXX বা ০১৮XXXXXXXX</span>
+        </div>
+        <div class="fg">
+          <label class="fl">📍 GPS কোঅর্ডিনেট</label>
+          <div class="gps-row">
+            <input class="fi" id="f-lat" type="number" placeholder="অক্ষাংশ 25.XXXXXX" step="0.000001" min="20" max="30">
+            <input class="fi" id="f-lon" type="number" placeholder="দ্রাঘিমাংশ 89.XXXXXX" step="0.000001" min="85" max="95">
+            <button class="gps-grab" onclick="grabGPS()" title="বর্তমান অবস্থান">📡</button>
+          </div>
+          <span class="fhint" id="gps-status">📡 বোতাম চাপলে ডিভাইসের GPS থেকে স্বয়ংক্রিয়ভাবে নেওয়া হবে</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="fg" style="flex:1">
+            <label class="fl">ফলদ চারা</label>
+            <input class="fi" id="f-falod" type="number" placeholder="0" min="0">
+          </div>
+          <div class="fg" style="flex:1">
+            <label class="fl">বনজ চারা</label>
+            <input class="fi" id="f-bonaj" type="number" placeholder="0" min="0">
+          </div>
+          <div class="fg" style="flex:1">
+            <label class="fl">ঔষধি চারা</label>
+            <input class="fi" id="f-oushodhi" type="number" placeholder="0" min="0">
+          </div>
+        </div>
+        <div class="action-row">
+          <button class="btn-s" onclick="closeEdit()">বাতিল</button>
+          <button class="btn-p" onclick="saveEdit()">💾 সংরক্ষণ করুন</button>
+        </div>
+        <button class="btn-s" style="width:100%;font-size:11px;padding:8px" onclick="exportOne()">📤 এই রেকর্ড CSV-তে রপ্তানি</button>
+      </div>
+
+      <!-- UPAZILA PANE -->
+      <div id="upazila-pane" class="pane" id="upazila-pane"></div>
+
+      <!-- MISSING MOBILE PANE -->
+      <div id="missing-pane" class="pane" style="padding:8px;gap:6px"></div>
+
+      <!-- EXPORT BAR -->
+      <div id="export-bar">
+        <button class="exp-btn" onclick="exportAll()">📤 আপডেট রপ্তানি (CSV)</button>
+        <button class="exp-btn sec" onclick="exportFull()">📋 সব ডেটা JSON</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button id="fab" title="নতুন নার্সারি" onclick="newNursery()">
+  ＋
+  <div id="fab-badge">0</div>
+</button>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SEED DATA  (compiled from xlsx, April 2026)
+// ═══════════════════════════════════════════════════════════
+const SEED = [{"id":1,"sl":1,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ নুর বক্ত আলী","address":"তালুক কালোয়া","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":2,"sl":2,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ নজরুল ইসলাম","address":"আলিয়া মাদ্রাসা সংলগ্ন কুড়িগ্রাম","mobile":"","lat":25.560833,"lon":89.831111,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[{"n":"আম","q":2000}],"bs":[],"os":[]},{"id":3,"sl":3,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ মনছুর আলী","address":"আদর্শ নার্সারী সার্কিট হাউজ, কুড়িগ্রাম","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":4,"sl":4,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ মোজাম্মেল হক","address":"খলিলগঞ্জ, কুড়িগ্রাম","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":5,"sl":5,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ আঃ রহমান","address":"ভেরভেরী","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":6,"sl":6,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ খলিলুর রহমান","address":"আধাগ্রাম","mobile":"","lat":25.560833,"lon":89.831111,"falod":600,"bonaj":0,"oushodhi":0,"total":600,"fs":[{"n":"আম","q":600}],"bs":[],"os":[]},{"id":7,"sl":7,"upazila":"কুড়িগ্রাম সদর","name":"লতা নার্সারী মোঃ আঃ জলিল","address":"","mobile":"01713710067","lat":25.560833,"lon":89.831111,"falod":600,"bonaj":0,"oushodhi":0,"total":600,"fs":[{"n":"আম","q":600}],"bs":[],"os":[]},{"id":8,"sl":8,"upazila":"কুড়িগ্রাম সদর","name":"শ্রী বাদল চন্দ্র","address":"খালিশা কালোয়া","mobile":"","lat":25.560833,"lon":89.831111,"falod":300,"bonaj":500,"oushodhi":0,"total":800,"fs":[{"n":"আম","q":300}],"bs":[{"n":"মেহগনি","q":500}],"os":[]},{"id":9,"sl":9,"upazila":"কুড়িগ্রাম সদর","name":"গ্রিণ বাংলা নার্সারী","address":"মোঃ আবুল কাশেম, শিবরাম","mobile":"01713741827","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":5000,"oushodhi":500,"total":5500,"fs":[],"bs":[{"n":"মেহগনি","q":5000}],"os":[{"n":"নিম","q":500}]},{"id":10,"sl":10,"upazila":"কুড়িগ্রাম সদর","name":"আলোর সন্ধানি নার্সারী","address":"খালিশা কালোয়া, মোঃ আবুল হোসেন","mobile":"01773656448","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":11,"sl":11,"upazila":"কুড়িগ্রাম সদর","name":"সানআপ","address":"তাবাছ্ছুম আক্তার, কাঠালবাড়ি বাজার","mobile":"01719062454","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":12,"sl":12,"upazila":"কুড়িগ্রাম সদর","name":"হোসেন নার্সারী মোঃ হোসেন আলী","address":"আধাগ্রাম","mobile":"01408441484","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":13,"sl":13,"upazila":"কুড়িগ্রাম সদর","name":"খোকা নার্সারী মোঃ রহিম উদ্দিন","address":"আধাগ্রাম","mobile":"01761197732","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":14,"sl":14,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ আবু রায়হান ফারুকী","address":"হরিরাম, বেলগছা","mobile":"","lat":25.560833,"lon":89.831111,"falod":500,"bonaj":0,"oushodhi":0,"total":500,"fs":[{"n":"আম","q":500}],"bs":[],"os":[]},{"id":15,"sl":15,"upazila":"কুড়িগ্রাম সদর","name":"বিপুল নার্সারী","address":"মোঃ আতাউর রহমান পাচগাছী","mobile":"01739018191","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":16,"sl":16,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ মহিউদ্দিন সোহেল","address":"স্টাফ কোয়াটার, কুড়িগ্রাম","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":17,"sl":17,"upazila":"কুড়িগ্রাম সদর","name":"শ্রী বিষাদু চন্দ্র","address":"ছড়ারপাড়, পূর্ব কুমরপুর","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":18,"sl":18,"upazila":"কুড়িগ্রাম সদর","name":"শ্রী পরেশ চন্দ্র","address":"মরাটারী, ঘোগাদহ","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":19,"sl":19,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ শাহ আলম","address":"ফকিরপাড়া, নাজিরা","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":20,"sl":20,"upazila":"কুড়িগ্রাম সদর","name":"শ্রী গজেন্দ্রনাথ","address":"ছড়ারপাড়","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":21,"sl":21,"upazila":"কুড়িগ্রাম সদর","name":"শ্রী গোবিন্দ চন্দ্র","address":"সাখারি পাড়া, ঘোগাদহ","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":22,"sl":22,"upazila":"কুড়িগ্রাম সদর","name":"শ্রী ধরনীকান্ত","address":"দক্ষিণ চাকেন্দারখামার ঘোগাদহ","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":2000,"oushodhi":0,"total":2000,"fs":[],"bs":[{"n":"মেহগনি","q":2000}],"os":[]},{"id":23,"sl":23,"upazila":"কুড়িগ্রাম সদর","name":"মায়ের দোয়া নার্সারী","address":"মোঃ রোস্তম আলিী, রায়পুর কাঠালবাড়ি","mobile":"01798921511","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":24,"sl":24,"upazila":"কুড়িগ্রাম সদর","name":"সাদিক এগ্রো আব্দুল গাফ্ফার","address":"হরিশ্বর কালোয়া","mobile":"01726871005","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":25,"sl":25,"upazila":"কুড়িগ্রাম সদর","name":"সন্তোষ কুমার রায়","address":"খালিশা কালোয়া","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":26,"sl":26,"upazila":"কুড়িগ্রাম সদর","name":"কৃষ্ণ চন্দ্র বর্মন ভদ্র","address":"কুড়িগ্রাম সদর","mobile":"","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":27,"sl":27,"upazila":"কুড়িগ্রাম সদর","name":"মোঃ লেবু মিয়া","address":"চিলকীর পাড়","mobile":"01729450657","lat":25.560833,"lon":89.831111,"falod":0,"bonaj":2000,"oushodhi":1500,"total":3500,"fs":[],"bs":[{"n":"মেহগনি","q":2000}],"os":[{"n":"নিম","q":1500}]},{"id":28,"sl":1,"upazila":"রাজারহাট","name":"আমজাদ আলী পিতাঃ ইয়াকুব আলী নাফাডাঙ্গা","address":"রাজারহাট","mobile":"","lat":null,"lon":null,"falod":3000,"bonaj":0,"oushodhi":0,"total":3000,"fs":[],"bs":[],"os":[]},{"id":29,"sl":2,"upazila":"রাজারহাট","name":"আমজাদ আলী পিতাঃ ইয়াকুব আলী নাফাডাঙ্গা","address":"রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":30,"sl":3,"upazila":"রাজারহাট","name":"আমজাদ আলী পিতাঃ ইয়াকুব আলী নাফাডাঙ্গা","address":"রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":31,"sl":4,"upazila":"রাজারহাট","name":"হর্র্টিকালচার নার্সারী পিতাঃ মৃত: আবুল কাশেম ব্যাপারী মাধাই","address":"রাজারহাট মোঃ সাইফুল ইসলাম","mobile":"01729963489","lat":null,"lon":null,"falod":10000,"bonaj":10000,"oushodhi":2000,"total":22000,"fs":[],"bs":[{"n":"মেহগনি","q":10000}],"os":[]},{"id":32,"sl":5,"upazila":"রাজারহাট","name":"হর্র্টিকালচার নার্সারী পিতাঃ মৃত: আবুল কাশেম ব্যাপারী মাধাই","address":"রাজারহাট মোঃ সাইফুল ইসলাম","mobile":"01729963489","lat":null,"lon":null,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[],"bs":[],"os":[]},{"id":33,"sl":6,"upazila":"রাজারহাট","name":"হর্র্টিকালচার নার্সারী পিতাঃ মৃত: আবুল কাশেম ব্যাপারী মাধাই","address":"রাজারহাট মোঃ সাইফুল ইসলাম","mobile":"01729963489","lat":null,"lon":null,"falod":3000,"bonaj":0,"oushodhi":0,"total":3000,"fs":[{"n":"পেয়ারা","q":3000}],"bs":[],"os":[]},{"id":34,"sl":7,"upazila":"রাজারহাট","name":"হর্র্টিকালচার নার্সারী পিতাঃ মৃত: আবুল কাশেম ব্যাপারী মাধাই","address":"রাজারহাট মোঃ সাইফুল ইসলাম","mobile":"01729963489","lat":null,"lon":null,"falod":5000,"bonaj":0,"oushodhi":0,"total":5000,"fs":[],"bs":[],"os":[]},{"id":35,"sl":8,"upazila":"রাজারহাট","name":"হর্র্টিকালচার নার্সারী পিতাঃ মৃত: আবুল কাশেম ব্যাপারী মাধাই","address":"রাজারহাট মোঃ সাইফুল ইসলাম","mobile":"01729963489","lat":null,"lon":null,"falod":24000,"bonaj":0,"oushodhi":0,"total":24000,"fs":[],"bs":[],"os":[]},{"id":36,"sl":9,"upazila":"রাজারহাট","name":"মোঃ ওছমান আলী পিতাঃ মৃত: জব্বার জয়দেবহায়াৎ","address":"চাকিরপশার","mobile":"01741076267","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":37,"sl":10,"upazila":"রাজারহাট","name":"মোঃ ওছমান আলী পিতাঃ মৃত: জব্বার জয়দেবহায়াৎ","address":"চাকিরপশার","mobile":"01741076267","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":38,"sl":11,"upazila":"রাজারহাট","name":"মোঃ ওছমান আলী পিতাঃ মৃত: জব্বার জয়দেবহায়াৎ","address":"চাকিরপশার","mobile":"01741076267","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":39,"sl":12,"upazila":"রাজারহাট","name":"বাগান বিলাস মোঃ আনিছুর মিয়া চাকিরপশার","address":"","mobile":"01798979710","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":40,"sl":13,"upazila":"রাজারহাট","name":"বাগান বিলাস মোঃ আনিছুর মিয়া চাকিরপশার","address":"","mobile":"01798979710","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":41,"sl":14,"upazila":"রাজারহাট","name":"বাগান বিলাস মোঃ আনিছুর মিয়া চাকিরপশার","address":"","mobile":"01798979710","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":42,"sl":15,"upazila":"রাজারহাট","name":"বাগান বিলাস মোঃ আনিছুর মিয়া চাকিরপশার","address":"","mobile":"01798979710","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":43,"sl":16,"upazila":"রাজারহাট","name":"বাগান বিলাস মোঃ আনিছুর মিয়া চাকিরপশার","address":"","mobile":"01798979710","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":44,"sl":17,"upazila":"রাজারহাট","name":"বাগান বিলাস মোঃ আনিছুর মিয়া চাকিরপশার","address":"","mobile":"01798979710","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":45,"sl":18,"upazila":"রাজারহাট","name":"জয় নার্সারি দিলীপ চন্দ্র রায় জয়দেব হায়াত","address":"চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":46,"sl":19,"upazila":"রাজারহাট","name":"জয় নার্সারি দিলীপ চন্দ্র রায় জয়দেব হায়াত","address":"চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":47,"sl":20,"upazila":"রাজারহাট","name":"জয় নার্সারি দিলীপ চন্দ্র রায় জয়দেব হায়াত","address":"চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":48,"sl":21,"upazila":"রাজারহাট","name":"জয় নার্সারি দিলীপ চন্দ্র রায় জয়দেব হায়াত","address":"চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":49,"sl":22,"upazila":"রাজারহাট","name":"জয় নার্সারি দিলীপ চন্দ্র রায় জয়দেব হায়াত","address":"চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":50,"sl":23,"upazila":"রাজারহাট","name":"জয় নার্সারি দিলীপ চন্দ্র রায় জয়দেব হায়াত","address":"চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":51,"sl":24,"upazila":"রাজারহাট","name":"আশা স্বস্তি শভা নার্সারি","address":"মোঃ সেকেন্দার আলী, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":52,"sl":25,"upazila":"রাজারহাট","name":"আশা স্বস্তি শভা নার্সারি","address":"মোঃ সেকেন্দার আলী, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":53,"sl":26,"upazila":"রাজারহাট","name":"আশা স্বস্তি শভা নার্সারি","address":"মোঃ সেকেন্দার আলী, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":54,"sl":27,"upazila":"রাজারহাট","name":"আশা স্বস্তি শভা নার্সারি","address":"মোঃ সেকেন্দার আলী, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":55,"sl":28,"upazila":"রাজারহাট","name":"সুদর্শন নার্সারি","address":"সুদর্শন রায়, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"01755384857","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":56,"sl":29,"upazila":"রাজারহাট","name":"সুদর্শন নার্সারি","address":"সুদর্শন রায়, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"01755384857","lat":null,"lon":null,"falod":300,"bonaj":0,"oushodhi":0,"total":300,"fs":[{"n":"লটকন","q":300}],"bs":[],"os":[]},{"id":57,"sl":30,"upazila":"রাজারহাট","name":"সুদর্শন নার্সারি","address":"সুদর্শন রায়, জয়দেব হায়াত, চাকিরপশার, রাজারহাট","mobile":"01755384857","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":58,"sl":31,"upazila":"রাজারহাট","name":"মানিক নার্সারী পিতাঃ প্রানকৃষ্ণ রায় ভীমশর্মা","address":"ঘড়িয়ালডাঙ্গা হেমন্ত কুমার রায়","mobile":"01723279658","lat":null,"lon":null,"falod":40000,"bonaj":5000,"oushodhi":0,"total":45000,"fs":[],"bs":[],"os":[]},{"id":59,"sl":32,"upazila":"রাজারহাট","name":"মানিক নার্সারী পিতাঃ প্রানকৃষ্ণ রায় ভীমশর্মা","address":"ঘড়িয়ালডাঙ্গা হেমন্ত কুমার রায়","mobile":"01723279658","lat":null,"lon":null,"falod":7000,"bonaj":0,"oushodhi":0,"total":7000,"fs":[],"bs":[],"os":[]},{"id":60,"sl":33,"upazila":"রাজারহাট","name":"মানিক নার্সারী পিতাঃ প্রানকৃষ্ণ রায় ভীমশর্মা","address":"ঘড়িয়ালডাঙ্গা হেমন্ত কুমার রায়","mobile":"01723279658","lat":null,"lon":null,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[],"bs":[],"os":[]},{"id":61,"sl":34,"upazila":"রাজারহাট","name":"মায়ের দোয়া নার্সারি","address":"বাঘ আছড়া, ঘরিয়াল ডঙ্গা, মোঃ এমদাদুল হক","mobile":"01311855918","lat":null,"lon":null,"falod":3000,"bonaj":0,"oushodhi":0,"total":3000,"fs":[],"bs":[],"os":[]},{"id":62,"sl":35,"upazila":"রাজারহাট","name":"মায়ের দোয়া নার্সারি","address":"বাঘ আছড়া, ঘরিয়াল ডঙ্গা, মোঃ এমদাদুল হক","mobile":"01311855918","lat":null,"lon":null,"falod":11000,"bonaj":15000,"oushodhi":0,"total":26000,"fs":[{"n":"লটকন","q":3000}],"bs":[{"n":"মেহগনি","q":10000}],"os":[]},{"id":63,"sl":36,"upazila":"রাজারহাট","name":"মায়ের দোয়া নার্সারি","address":"বাঘ আছড়া, ঘরিয়াল ডঙ্গা, মোঃ এমদাদুল হক","mobile":"01311855918","lat":null,"lon":null,"falod":2400,"bonaj":0,"oushodhi":0,"total":2400,"fs":[],"bs":[],"os":[]},{"id":64,"sl":37,"upazila":"রাজারহাট","name":"মায়ের দোয়া নার্সারি","address":"বাঘ আছড়া, ঘরিয়াল ডঙ্গা, মোঃ এমদাদুল হক","mobile":"01311855918","lat":null,"lon":null,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[],"bs":[],"os":[]},{"id":65,"sl":38,"upazila":"রাজারহাট","name":"হাবিব এন্ড হুমায়ন নার্সারি","address":"মোঃ আ; রহমান, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":66,"sl":39,"upazila":"রাজারহাট","name":"হাবিব এন্ড হুমায়ন নার্সারি","address":"মোঃ আ; রহমান, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":67,"sl":40,"upazila":"রাজারহাট","name":"হাবিব এন্ড হুমায়ন নার্সারি","address":"মোঃ আ; রহমান, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":68,"sl":41,"upazila":"রাজারহাট","name":"হাবিব এন্ড হুমায়ন নার্সারি","address":"মোঃ আ; রহমান, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":69,"sl":42,"upazila":"রাজারহাট","name":"হাবিব এন্ড হুমায়ন নার্সারি","address":"মোঃ আ; রহমান, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":70,"sl":43,"upazila":"রাজারহাট","name":"হাবিব এন্ড হুমায়ন নার্সারি","address":"মোঃ আ; রহমান, চাকিরপশার, রাজারহাট","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":71,"sl":44,"upazila":"রাজারহাট","name":"মা বাবার দোয়া","address":"বাঘ আছ্রা, ঘরিয়াল ডাঙ্গা, 3","mobile":"01965432786","lat":null,"lon":null,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[],"bs":[],"os":[]},{"id":72,"sl":45,"upazila":"রাজারহাট","name":"মা বাবার দোয়া","address":"বাঘ আছ্রা, ঘরিয়াল ডাঙ্গা, 3","mobile":"01965432786","lat":null,"lon":null,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[{"n":"কাঁঠাল","q":2000}],"bs":[],"os":[]},{"id":73,"sl":46,"upazila":"রাজারহাট","name":"মা বাবার দোয়া","address":"বাঘ আছ্রা, ঘরিয়াল ডাঙ্গা, 3","mobile":"01965432786","lat":null,"lon":null,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[],"bs":[],"os":[]},{"id":74,"sl":47,"upazila":"রাজারহাট","name":"মা বাবার দোয়া","address":"বাঘ আছ্রা, ঘরিয়াল ডাঙ্গা, 3","mobile":"01965432786","lat":null,"lon":null,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[{"n":"জাম","q":1000}],"bs":[],"os":[]},{"id":75,"sl":48,"upazila":"রাজারহাট","name":"প্রতীক নার্সারি","address":"ছিনাই, রাজারহাট, কানাই চন্দ্র রায়","mobile":"01748229230","lat":null,"lon":null,"falod":4000,"bonaj":4000,"oushodhi":400,"total":8400,"fs":[],"bs":[],"os":[]},{"id":76,"sl":49,"upazila":"রাজারহাট","name":"প্রতীক নার্সারি","address":"ছিনাই, রাজারহাট, কানাই চন্দ্র রায়","mobile":"01748229230","lat":null,"lon":null,"falod":800,"bonaj":1000,"oushodhi":0,"total":1800,"fs":[],"bs":[],"os":[]},{"id":77,"sl":50,"upazila":"রাজারহাট","name":"প্রতীক নার্সারি","address":"ছিনাই, রাজারহাট, কানাই চন্দ্র রায়","mobile":"01748229230","lat":null,"lon":null,"falod":1000,"bonaj":200,"oushodhi":0,"total":1200,"fs":[],"bs":[],"os":[]},{"id":78,"sl":51,"upazila":"রাজারহাট","name":"প্রতীক নার্সারি","address":"ছিনাই, রাজারহাট, কানাই চন্দ্র রায়","mobile":"01748229230","lat":null,"lon":null,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[],"bs":[],"os":[]},{"id":79,"sl":52,"upazila":"রাজারহাট","name":"নিজ নার্সারি","address":"ছিনাই, রাজারহাট, নির্মল চন্দ্র রায়, মোবাইল নম্বরঃ","mobile":"01773310917","lat":null,"lon":null,"falod":3200,"bonaj":0,"oushodhi":0,"total":3200,"fs":[],"bs":[],"os":[]},{"id":80,"sl":53,"upazila":"রাজারহাট","name":"নিজ নার্সারি","address":"ছিনাই, রাজারহাট, নির্মল চন্দ্র রায়, মোবাইল নম্বরঃ","mobile":"01773310917","lat":null,"lon":null,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[],"bs":[],"os":[]},{"id":81,"sl":54,"upazila":"রাজারহাট","name":"শাকিল নার্সারি","address":"ছিনাই, রাজারহাট, মোঃ আলমগীর হোসেন, মোঃ 7","mobile":"01718474727","lat":null,"lon":null,"falod":250,"bonaj":500,"oushodhi":150,"total":900,"fs":[{"n":"লিচু","q":100}],"bs":[{"n":"মেহগনি","q":300}],"os":[{"n":"হরিতকী","q":50}]},{"id":82,"sl":55,"upazila":"রাজারহাট","name":"শাকিল নার্সারি","address":"ছিনাই, রাজারহাট, মোঃ আলমগীর হোসেন, মোঃ 7","mobile":"01718474727","lat":null,"lon":null,"falod":400,"bonaj":0,"oushodhi":100,"total":500,"fs":[{"n":"আম","q":200}],"bs":[],"os":[{"n":"অর্জুন","q":50}]},{"id":83,"sl":56,"upazila":"রাজারহাট","name":"শাকিল নার্সারি","address":"ছিনাই, রাজারহাট, মোঃ আলমগীর হোসেন, মোঃ 7","mobile":"01718474727","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":84,"sl":57,"upazila":"রাজারহাট","name":"শাকিল নার্সারি","address":"ছিনাই, রাজারহাট, মোঃ আলমগীর হোসেন, মোঃ 7","mobile":"01718474727","lat":null,"lon":null,"falod":250,"bonaj":0,"oushodhi":0,"total":250,"fs":[{"n":"লটকন","q":100}],"bs":[],"os":[]},{"id":85,"sl":58,"upazila":"রাজারহাট","name":"বাগান বিলাশ","address":"মেহের জামাল, ছিনাই, রাজারহাট","mobile":"01791611513","lat":null,"lon":null,"falod":500,"bonaj":450,"oushodhi":0,"total":950,"fs":[{"n":"লিচু","q":200}],"bs":[{"n":"মেহগনি","q":200}],"os":[]},{"id":86,"sl":59,"upazila":"রাজারহাট","name":"বাগান বিলাশ","address":"মেহের জামাল, ছিনাই, রাজারহাট","mobile":"01791611513","lat":null,"lon":null,"falod":400,"bonaj":0,"oushodhi":0,"total":400,"fs":[{"n":"লটকন","q":200}],"bs":[],"os":[]},{"id":87,"sl":60,"upazila":"রাজারহাট","name":"বাগান বিলাশ","address":"মেহের জামাল, ছিনাই, রাজারহাট","mobile":"01791611513","lat":null,"lon":null,"falod":350,"bonaj":0,"oushodhi":0,"total":350,"fs":[{"n":"আম","q":200}],"bs":[],"os":[]},{"id":88,"sl":61,"upazila":"রাজারহাট","name":"বাগান বিলাশ","address":"মেহের জামাল, ছিনাই, রাজারহাট","mobile":"01791611513","lat":null,"lon":null,"falod":200,"bonaj":0,"oushodhi":0,"total":200,"fs":[{"n":"পেয়ারা","q":100}],"bs":[],"os":[]},{"id":89,"sl":62,"upazila":"রাজারহাট","name":"বাগান বিলাশ","address":"মেহের জামাল, ছিনাই, রাজারহাট","mobile":"01791611513","lat":null,"lon":null,"falod":150,"bonaj":0,"oushodhi":0,"total":150,"fs":[{"n":"ডালিম","q":50}],"bs":[],"os":[]},{"id":90,"sl":63,"upazila":"রাজারহাট","name":"জীবন রায় পিতাঃ গীবেন্দ্র নাথ রায় দানা","address":"রাজারহাট","mobile":"","lat":null,"lon":null,"falod":3000,"bonaj":0,"oushodhi":0,"total":3000,"fs":[],"bs":[],"os":[]},{"id":91,"sl":64,"upazila":"রাজারহাট","name":"মোঃ সেকেন্দার আলী পিতাঃ জয়নাল আবেদীন পুটিকাটা","address":"রাজারহাট","mobile":"01701594904","lat":null,"lon":null,"falod":70150,"bonaj":2200,"oushodhi":0,"total":72350,"fs":[{"n":"পেয়ারা","q":500},{"n":"লটকন","q":1000}],"bs":[{"n":"বেলজিয়াম","q":1000}],"os":[]},{"id":92,"sl":1,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আনোয়ার হোসেন","address":"গ্রাম-গছিডাঙ্গা, পাইকেরছড়া, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01301104225","lat":null,"lon":null,"falod":2100,"bonaj":0,"oushodhi":0,"total":2100,"fs":[{"n":"আম","q":400},{"n":"কাঁঠাল","q":300},{"n":"লিচু","q":300}],"bs":[],"os":[]},{"id":93,"sl":2,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আছর আলী","address":"গ্রাম-দেওয়ানের খামার(বাংলালিংক টাওয়ার, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01701970266","lat":26.128194,"lon":89.665667,"falod":600,"bonaj":0,"oushodhi":0,"total":600,"fs":[{"n":"আম","q":80},{"n":"কাঁঠাল","q":60},{"n":"লিচু","q":60}],"bs":[],"os":[]},{"id":94,"sl":3,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আজিজ মিয়া","address":"গ্রাম-গোপালপুর, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01773084745","lat":26.128194,"lon":89.665722,"falod":600,"bonaj":0,"oushodhi":0,"total":600,"fs":[{"n":"আম","q":80},{"n":"কাঁঠাল","q":60},{"n":"লিচু","q":60}],"bs":[],"os":[]},{"id":95,"sl":4,"upazila":"ভূরুঙ্গামারী","name":"মোঃ জুয়েল রানা","address":"গ্রাম-নলেয়া, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01723315388","lat":26.128194,"lon":89.665583,"falod":620,"bonaj":0,"oushodhi":0,"total":620,"fs":[{"n":"আম","q":100},{"n":"কাঁঠাল","q":60},{"n":"লিচু","q":60}],"bs":[],"os":[]},{"id":96,"sl":5,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আব্দুল বারেক","address":"গ্রাম-পূর্ব কেদার, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01717888703","lat":26.063851,"lon":89.781575,"falod":13150,"bonaj":0,"oushodhi":0,"total":13150,"fs":[{"n":"আম","q":800},{"n":"কাঁঠাল","q":600},{"n":"লিচু","q":600},{"n":"জাম","q":200},{"n":"ডালিম","q":200}],"bs":[],"os":[]},{"id":97,"sl":6,"upazila":"ভূরুঙ্গামারী","name":"মোঃ লোকমান হোসেন","address":"গ্রাম-ভরতেরছড়া, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":98,"sl":7,"upazila":"ভূরুঙ্গামারী","name":"মোঃ মনির উদ্দিন","address":"গ্রাম-কা: আঙ্গারিয়া, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01783062440","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":99,"sl":8,"upazila":"ভূরুঙ্গামারী","name":"মোঃ এনামুল হক","address":"গ্রাম-ভরতেরছড়া, বঙ্গসোনাহাট, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"","lat":null,"lon":null,"falod":1800,"bonaj":180,"oushodhi":0,"total":1980,"fs":[{"n":"আম","q":400},{"n":"কাঁঠাল","q":200},{"n":"লিচু","q":200}],"bs":[{"n":"মেহগনি","q":60}],"os":[]},{"id":100,"sl":9,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আছর উদ্দিন","address":"গ্রাম-গোপালপুর, কা:আঙ্গারিয়া, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01717255639","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":101,"sl":10,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আব্দুল খালেক","address":"গ্রাম-বারুইটারী, আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01740955135","lat":null,"lon":null,"falod":3900,"bonaj":200,"oushodhi":180,"total":4280,"fs":[{"n":"আম","q":300},{"n":"কাঁঠাল","q":300},{"n":"লিচু","q":300}],"bs":[{"n":"মেহগনি","q":60}],"os":[{"n":"নিম","q":60}]},{"id":102,"sl":11,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আব্দুল আজিজ","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01741359329","lat":null,"lon":null,"falod":2700,"bonaj":450,"oushodhi":0,"total":3150,"fs":[{"n":"আম","q":400},{"n":"কাঁঠাল","q":400},{"n":"লিচু","q":400}],"bs":[{"n":"মেহগনি","q":200}],"os":[]},{"id":103,"sl":12,"upazila":"ভূরুঙ্গামারী","name":"মোঃ রফিকুল ইসলাম","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01773381930","lat":null,"lon":null,"falod":1800,"bonaj":330,"oushodhi":0,"total":2130,"fs":[{"n":"আম","q":400},{"n":"কাঁঠাল","q":200},{"n":"লিচু","q":200}],"bs":[{"n":"মেহগনি","q":100}],"os":[]},{"id":104,"sl":13,"upazila":"ভূরুঙ্গামারী","name":"মোঃ বাদশা মিয়া","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01739907181","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":105,"sl":14,"upazila":"ভূরুঙ্গামারী","name":"মোঃ নুর ইসলাম","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01728616884","lat":null,"lon":null,"falod":620,"bonaj":600,"oushodhi":300,"total":1520,"fs":[{"n":"আম","q":100},{"n":"কাঁঠাল","q":60},{"n":"লিচু","q":60}],"bs":[{"n":"মেহগনি","q":200}],"os":[{"n":"নিম","q":100}]},{"id":106,"sl":15,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আঃ রহিম","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, ভূরু্ঙ্গামারী, কুড়িগ্রাম","mobile":"01308180050","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":107,"sl":16,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আছর উদ্দিন","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01704226681","lat":null,"lon":null,"falod":600,"bonaj":0,"oushodhi":140,"total":740,"fs":[{"n":"আম","q":100},{"n":"লিচু","q":100}],"bs":[],"os":[{"n":"নিম","q":50}]},{"id":108,"sl":17,"upazila":"ভূরুঙ্গামারী","name":"মোঃ এরশাদুল হক","address":"গ্রাম-খা: আন্ধারীঝাড়, আন্ধারীঝাড়, কুড়িগ্রাম","mobile":"01738376075","lat":null,"lon":null,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":109,"sl":18,"upazila":"ভূরুঙ্গামারী","name":"মোঃ হেলাল উদ্দিন","address":"গ্রাম-খা: আন্ধারীঝাড়, ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"","lat":null,"lon":null,"falod":3900,"bonaj":0,"oushodhi":0,"total":3900,"fs":[{"n":"আম","q":400},{"n":"লিচু","q":400},{"n":"লটকন","q":400}],"bs":[],"os":[]},{"id":110,"sl":19,"upazila":"ভূরুঙ্গামারী","name":"মোঃ আবু বক্কর সিদ্দিক","address":"গ্রাম-কা: আঙ্গারিয়া (পল্লিবিদ্যুৎ অফিস সংলগ্ন), ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01710838332","lat":26.11575,"lon":89.670806,"falod":670,"bonaj":0,"oushodhi":100,"total":770,"fs":[{"n":"আম","q":100},{"n":"কাঁঠাল","q":100},{"n":"লিচু","q":60}],"bs":[],"os":[{"n":"নিম","q":30}]},{"id":111,"sl":20,"upazila":"ভূরুঙ্গামারী","name":"মোছাঃ শারমিন আন্তার","address":"গ্রাম-কা: আঙ্গারিয়া (পল্লিবিদ্যুৎ অফিস সংলগ্ন), ভূরুঙ্গামারী, কুড়িগ্রাম","mobile":"01309414034","lat":26.11575,"lon":89.670778,"falod":3900,"bonaj":0,"oushodhi":0,"total":3900,"fs":[{"n":"আম","q":300},{"n":"কাঁঠাল","q":300},{"n":"লিচু","q":300}],"bs":[],"os":[]},{"id":112,"sl":1,"upazila":"ফুলবাড়ী","name":"ভাই ভাই নার্সারি চন্দ্রখানা","address":"ফুলবাড়ী","mobile":"01735127172","lat":25.944266,"lon":89.554521,"falod":565,"bonaj":700,"oushodhi":0,"total":1265,"fs":[{"n":"আম","q":50},{"n":"কাঁঠাল","q":15},{"n":"জামরুল","q":50}],"bs":[{"n":"মেহগনি","q":500}],"os":[]},{"id":113,"sl":2,"upazila":"ফুলবাড়ী","name":"কাজল নার্সারি চন্দ্রখানা","address":"ফুলবাড়ী","mobile":"01776813828","lat":25.941707,"lon":89.554159,"falod":2850,"bonaj":400,"oushodhi":200,"total":3450,"fs":[{"n":"আম","q":1000},{"n":"কাঁঠাল","q":200},{"n":"জামরুল","q":250},{"n":"লটকন","q":500},{"n":"কামরাঙ্গা","q":250}],"bs":[{"n":"মেহগনি","q":400}],"os":[{"n":"জাত নিম","q":100},{"n":"বহেরা","q":100}]},{"id":114,"sl":3,"upazila":"ফুলবাড়ী","name":"মামা ভাগ্নে নার্সারি নাওডাঙ্গা","address":"নাওডাঙ্গা","mobile":"01750502553","lat":25.981748,"lon":89.519866,"falod":3100,"bonaj":7500,"oushodhi":100,"total":10700,"fs":[{"n":"জাম","q":1000}],"bs":[{"n":"মেহগনি","q":5000}],"os":[]},{"id":115,"sl":4,"upazila":"ফুলবাড়ী","name":"রোহান নার্সারি নাওডাঙ্গা","address":"নাওডাঙ্গা","mobile":"01619864253","lat":25.982248,"lon":89.520491,"falod":1700,"bonaj":1100,"oushodhi":50,"total":2850,"fs":[{"n":"কাঁঠাল","q":500}],"bs":[],"os":[]},{"id":116,"sl":5,"upazila":"ফুলবাড়ী","name":"শারমিন নার্সারি শিমুলবাড়ী","address":"শিমুলবাড়ী","mobile":"01927971826","lat":25.934368,"lon":89.541586,"falod":1120,"bonaj":100,"oushodhi":0,"total":1220,"fs":[{"n":"আম","q":100}],"bs":[{"n":"মেহগনি","q":100}],"os":[]},{"id":117,"sl":6,"upazila":"ফুলবাড়ী","name":"জুয়েল নার্সারি কুটিচন্দ্রখানা","address":"ফুলবাড়ী","mobile":"01846189021","lat":25.961668,"lon":89.571881,"falod":9400,"bonaj":0,"oushodhi":1450,"total":10850,"fs":[{"n":"আম","q":500},{"n":"কাঁঠাল","q":400},{"n":"লটকন","q":2000},{"n":"লিচু","q":1000}],"bs":[],"os":[{"n":"অর্জুন","q":200},{"n":"বহেরা","q":20}]},{"id":118,"sl":7,"upazila":"ফুলবাড়ী","name":"রোজি নার্সারি ফুলমতি","address":"নাওডাঙ্গা","mobile":"01724637744","lat":25.983438,"lon":89.522881,"falod":122000,"bonaj":118500,"oushodhi":100800,"total":341300,"fs":[{"n":"আম","q":2000},{"n":"কাঁঠাল","q":5000},{"n":"জাম","q":10000},{"n":"পেঁয়ারা","q":8000},{"n":"জাম্বুরা","q":8000}],"bs":[{"n":"মেহগনি","q":30000},{"n":"গামার","q":10000},{"n":"সুন্দরী","q":500},{"n":"শিশু","q":1000},{"n":"তল্লী","q":5000}],"os":[{"n":"হরিতকি","q":30000},{"n":"বহেরা","q":10000},{"n":"আমলকি","q":3000}]},{"id":119,"sl":8,"upazila":"ফুলবাড়ী","name":"রেখা নার্সারি রাবাইতারী","address":"ভাঙ্গামোড়","mobile":"01794651199","lat":25.931178,"lon":89.629386,"falod":32500,"bonaj":5000,"oushodhi":6000,"total":43500,"fs":[{"n":"আম","q":6000},{"n":"কাঁঠাল","q":5000},{"n":"জাম","q":2500},{"n":"লটকন","q":7000}],"bs":[],"os":[{"n":"জাত নিম","q":6000}]},{"id":120,"sl":9,"upazila":"ফুলবাড়ী","name":"জাহাঙ্গীর নার্সারি ফুলমতি","address":"নাওডাঙ্গা","mobile":"01734574274","lat":25.983657,"lon":89.522008,"falod":52800,"bonaj":58900,"oushodhi":44100,"total":155800,"fs":[{"n":"আম","q":1500},{"n":"কাঁঠাল","q":3000},{"n":"জাম","q":5000},{"n":"পেঁয়ারা","q":3000},{"n":"জাম্বুরা","q":5000}],"bs":[{"n":"মেহগনি","q":10000},{"n":"গামার","q":5000},{"n":"শিশু","q":500},{"n":"তল্লী","q":5000},{"n":"কৃষ্ণচূড়া","q":5000}],"os":[{"n":"হরিতকি","q":10000},{"n":"বহেরা","q":5000},{"n":"অর্জুন","q":5000}]},{"id":121,"sl":10,"upazila":"ফুলবাড়ী","name":"বিনা নার্সারি চন্দ্রখানা","address":"ফুলবাড়ী","mobile":"01738449896","lat":25.932054,"lon":89.561135,"falod":7100,"bonaj":0,"oushodhi":350,"total":7450,"fs":[{"n":"আম","q":500},{"n":"কাঁঠাল","q":500},{"n":"জাম","q":100},{"n":"লটকন","q":2000}],"bs":[],"os":[{"n":"জাত নিম","q":100},{"n":"বহেরা","q":100}]},{"id":122,"sl":11,"upazila":"ফুলবাড়ী","name":"ভাই ভাই নার্সারি পানিমাছকুটি","address":"ফুলবাড়ী","mobile":"01755489950","lat":25.958113,"lon":89.5525,"falod":3360,"bonaj":1000,"oushodhi":1800,"total":6160,"fs":[{"n":"আম","q":50},{"n":"কাঁঠাল","q":1000},{"n":"জাম","q":500},{"n":"লিচু","q":200}],"bs":[{"n":"মেহগনি","q":1000}],"os":[{"n":"জাত নিম","q":300},{"n":"বহেরা","q":200},{"n":"অর্জুন","q":500}]},{"id":123,"sl":1,"upazila":"নাগেশ্বরী","name":"ভাই ভাই নাসরী","address":"আলেপের তেপুতী","mobile":"01714692724","lat":26.020137,"lon":89.678485,"falod":6050,"bonaj":0,"oushodhi":600,"total":6650,"fs":[{"n":"আম","q":500},{"n":"জাম","q":200},{"n":"কাঠাল","q":100},{"n":"পেঁয়ারা","q":50},{"n":"লেবু","q":200}],"bs":[],"os":[{"n":"নিম","q":20},{"n":"এলোভেরা","q":50},{"n":"আমলকি","q":50}]},{"id":124,"sl":2,"upazila":"নাগেশ্বরী","name":"পারভীন নার্সারী","address":"সন্তোষপুর","mobile":"01761677146","lat":26.006268,"lon":89.682755,"falod":26550,"bonaj":0,"oushodhi":600,"total":27150,"fs":[{"n":"আম","q":2000},{"n":"জাম","q":2000},{"n":"নারিকেল","q":100},{"n":"পেঁয়ারা","q":300},{"n":"লেবু","q":200}],"bs":[],"os":[{"n":"এলোভেরা","q":50},{"n":"হরতকি","q":50}]},{"id":125,"sl":14,"upazila":"নাগেশ্বরী","name":"জুয়েল নার্সারী","address":"আলেপের তেপুতী","mobile":"01705918221","lat":26.020137,"lon":89.678485,"falod":147500,"bonaj":1100,"oushodhi":2000,"total":150600,"fs":[{"n":"আম","q":5000},{"n":"কাঠাল","q":2500},{"n":"নারিকেল","q":1000},{"n":"পেঁয়ারা","q":3000},{"n":"লেবু","q":2000}],"bs":[{"n":"মেহগনি","q":50},{"n":"ঘোরানিম","q":50}],"os":[{"n":"নিম","q":100},{"n":"আমলকি","q":100},{"n":"হরতকি","q":50}]},{"id":126,"sl":21,"upazila":"নাগেশ্বরী","name":"হাফিজুর নার্সারী","address":"আলেপের তেপুতী","mobile":"01744658256","lat":26.020137,"lon":89.678485,"falod":21000,"bonaj":900,"oushodhi":450,"total":22350,"fs":[],"bs":[{"n":"মেহগনি","q":100}],"os":[{"n":"নিম","q":50}]},{"id":127,"sl":22,"upazila":"নাগেশ্বরী","name":"হাফিজুর নার্সারী","address":"আলেপের তেপুতী","mobile":"01744658256","lat":26.020137,"lon":89.678485,"falod":13000,"bonaj":150,"oushodhi":0,"total":13150,"fs":[{"n":"জাম","q":500}],"bs":[{"n":"ঘোরানিম","q":50}],"os":[]},{"id":128,"sl":23,"upazila":"নাগেশ্বরী","name":"হাফিজুর নার্সারী","address":"আলেপের তেপুতী","mobile":"01744658256","lat":26.020137,"lon":89.678485,"falod":10000,"bonaj":0,"oushodhi":150,"total":10150,"fs":[{"n":"কাঠাল","q":1000}],"bs":[],"os":[{"n":"আমলকি","q":20}]},{"id":129,"sl":24,"upazila":"নাগেশ্বরী","name":"হাফিজুর নার্সারী","address":"আলেপের তেপুতী","mobile":"01744658256","lat":26.020137,"lon":89.678485,"falod":2800,"bonaj":0,"oushodhi":0,"total":2800,"fs":[{"n":"নারিকেল","q":500}],"bs":[],"os":[]},{"id":130,"sl":25,"upazila":"নাগেশ্বরী","name":"হাফিজুর নার্সারী","address":"আলেপের তেপুতী","mobile":"01744658256","lat":26.020137,"lon":89.678485,"falod":3200,"bonaj":0,"oushodhi":0,"total":3200,"fs":[],"bs":[],"os":[]},{"id":131,"sl":26,"upazila":"নাগেশ্বরী","name":"ভাই ভাই নার্সারী","address":"মোক্তারকুটি","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":1200,"bonaj":0,"oushodhi":0,"total":1200,"fs":[],"bs":[],"os":[]},{"id":132,"sl":27,"upazila":"নাগেশ্বরী","name":"ভাই ভাই নার্সারী","address":"মোক্তারকুটি","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":1500,"bonaj":0,"oushodhi":0,"total":1500,"fs":[],"bs":[],"os":[]},{"id":133,"sl":28,"upazila":"নাগেশ্বরী","name":"ভাই ভাই নার্সারী","address":"মোক্তারকুটি","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":1500,"bonaj":0,"oushodhi":0,"total":1500,"fs":[],"bs":[],"os":[]},{"id":134,"sl":29,"upazila":"নাগেশ্বরী","name":"ভাই ভাই নার্সারী","address":"মোক্তারকুটি","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[],"bs":[],"os":[]},{"id":135,"sl":30,"upazila":"নাগেশ্বরী","name":"ভাই ভাই নার্সারী","address":"মোক্তারকুটি","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":2300,"bonaj":0,"oushodhi":0,"total":2300,"fs":[],"bs":[],"os":[]},{"id":136,"sl":31,"upazila":"নাগেশ্বরী","name":"দিপু নার্সারী","address":"গাগলা","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":10500,"bonaj":0,"oushodhi":0,"total":10500,"fs":[{"n":"আম","q":500}],"bs":[],"os":[]},{"id":137,"sl":32,"upazila":"নাগেশ্বরী","name":"দিপু নার্সারী","address":"গাগলা","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":6000,"bonaj":0,"oushodhi":0,"total":6000,"fs":[],"bs":[],"os":[]},{"id":138,"sl":33,"upazila":"নাগেশ্বরী","name":"দিপু নার্সারী","address":"গাগলা","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":2500,"bonaj":0,"oushodhi":0,"total":2500,"fs":[],"bs":[],"os":[]},{"id":139,"sl":34,"upazila":"নাগেশ্বরী","name":"দিপু নার্সারী","address":"গাগলা","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":4500,"bonaj":0,"oushodhi":0,"total":4500,"fs":[{"n":"নারিকেল","q":1000}],"bs":[],"os":[]},{"id":140,"sl":35,"upazila":"নাগেশ্বরী","name":"দিপু নার্সারী","address":"গাগলা","mobile":"01784001795","lat":26.020137,"lon":89.678485,"falod":2000,"bonaj":0,"oushodhi":0,"total":2000,"fs":[{"n":"পেঁয়ারা","q":100}],"bs":[],"os":[]},{"id":141,"sl":36,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":1600,"bonaj":0,"oushodhi":0,"total":1600,"fs":[],"bs":[],"os":[]},{"id":142,"sl":37,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":1200,"bonaj":0,"oushodhi":0,"total":1200,"fs":[],"bs":[],"os":[]},{"id":143,"sl":38,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":4000,"bonaj":0,"oushodhi":0,"total":4000,"fs":[{"n":"কাঠাল","q":500}],"bs":[],"os":[]},{"id":144,"sl":39,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":600,"bonaj":0,"oushodhi":0,"total":600,"fs":[],"bs":[],"os":[]},{"id":145,"sl":40,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":400,"bonaj":0,"oushodhi":0,"total":400,"fs":[{"n":"পেঁয়ারা","q":50}],"bs":[],"os":[]},{"id":146,"sl":41,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":5500,"bonaj":0,"oushodhi":0,"total":5500,"fs":[{"n":"জলপাই","q":500}],"bs":[],"os":[]},{"id":147,"sl":42,"upazila":"নাগেশ্বরী","name":"মল্লিকা নার্সারী","address":"বল্লভপুর","mobile":"01751466719","lat":25.991093,"lon":89.680798,"falod":1500,"bonaj":0,"oushodhi":0,"total":1500,"fs":[{"n":"আমলক্কি","q":200}],"bs":[],"os":[]},{"id":148,"sl":43,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":10000,"bonaj":4600,"oushodhi":12000,"total":26600,"fs":[{"n":"আম","q":1000}],"bs":[{"n":"মেহগনি","q":500}],"os":[{"n":"নিম","q":1000}]},{"id":149,"sl":44,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":11000,"bonaj":900,"oushodhi":1000,"total":12900,"fs":[{"n":"জাম","q":500}],"bs":[],"os":[{"n":"এলোভেরা","q":200}]},{"id":150,"sl":45,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":4900,"bonaj":500,"oushodhi":1000,"total":6400,"fs":[],"bs":[{"n":"কাটবাদাম","q":50}],"os":[{"n":"আমলকি","q":200}]},{"id":151,"sl":46,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":1300,"bonaj":0,"oushodhi":0,"total":1300,"fs":[],"bs":[],"os":[]},{"id":152,"sl":47,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":300,"bonaj":0,"oushodhi":0,"total":300,"fs":[{"n":"বড়ই","q":50}],"bs":[],"os":[]},{"id":153,"sl":48,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[{"n":"জলপাই","q":100}],"bs":[],"os":[]},{"id":154,"sl":49,"upazila":"নাগেশ্বরী","name":"ইয়াছিন নার্সারী","address":"চরবলরামপুর","mobile":"01742638167","lat":25.991093,"lon":89.680798,"falod":2100,"bonaj":0,"oushodhi":0,"total":2100,"fs":[{"n":"লেবু","q":500}],"bs":[],"os":[]},{"id":155,"sl":50,"upazila":"নাগেশ্বরী","name":"সামাদ নার্সারী","address":"রায়গঞ্জ","mobile":"01743740161","lat":26.030214,"lon":89.689497,"falod":9000,"bonaj":0,"oushodhi":0,"total":9000,"fs":[{"n":"আম","q":1000}],"bs":[],"os":[]},{"id":156,"sl":51,"upazila":"নাগেশ্বরী","name":"সামাদ নার্সারী","address":"রায়গঞ্জ","mobile":"01743740161","lat":26.030214,"lon":89.689497,"falod":3100,"bonaj":0,"oushodhi":5000,"total":8100,"fs":[{"n":"জাম","q":500}],"bs":[],"os":[{"n":"নিম","q":500}]},{"id":157,"sl":52,"upazila":"নাগেশ্বরী","name":"সামাদ নার্সারী","address":"রায়গঞ্জ","mobile":"01743740161","lat":26.030214,"lon":89.689497,"falod":10000,"bonaj":0,"oushodhi":0,"total":10000,"fs":[],"bs":[],"os":[]},{"id":158,"sl":53,"upazila":"নাগেশ্বরী","name":"সামাদ নার্সারী","address":"রায়গঞ্জ","mobile":"01743740161","lat":26.030214,"lon":89.689497,"falod":3550,"bonaj":0,"oushodhi":0,"total":3550,"fs":[{"n":"নারিকেল","q":100}],"bs":[],"os":[]},{"id":159,"sl":54,"upazila":"নাগেশ্বরী","name":"সামাদ নার্সারী","address":"রায়গঞ্জ","mobile":"01743740161","lat":26.030214,"lon":89.689497,"falod":350,"bonaj":0,"oushodhi":0,"total":350,"fs":[{"n":"বড়ই","q":40}],"bs":[],"os":[]},{"id":160,"sl":55,"upazila":"নাগেশ্বরী","name":"জননী নার্সারী","address":"বেরুবাড়ী","mobile":"01704235070","lat":25.991093,"lon":89.680798,"falod":11500,"bonaj":0,"oushodhi":1000,"total":12500,"fs":[],"bs":[],"os":[{"n":"নিম","q":50}]},{"id":161,"sl":56,"upazila":"নাগেশ্বরী","name":"জননী নার্সারী","address":"বেরুবাড়ী","mobile":"01704235070","lat":25.991093,"lon":89.680798,"falod":3000,"bonaj":0,"oushodhi":0,"total":3000,"fs":[{"n":"জাম","q":500}],"bs":[],"os":[]},{"id":162,"sl":57,"upazila":"নাগেশ্বরী","name":"জননী নার্সারী","address":"বেরুবাড়ী","mobile":"01704235070","lat":25.991093,"lon":89.680798,"falod":8900,"bonaj":0,"oushodhi":0,"total":8900,"fs":[{"n":"কাঠাল","q":1000}],"bs":[],"os":[]},{"id":163,"sl":58,"upazila":"নাগেশ্বরী","name":"জননী নার্সারী","address":"বেরুবাড়ী","mobile":"01704235070","lat":25.991093,"lon":89.680798,"falod":1000,"bonaj":0,"oushodhi":0,"total":1000,"fs":[],"bs":[],"os":[]},{"id":164,"sl":59,"upazila":"নাগেশ্বরী","name":"জননী নার্সারী","address":"বেরুবাড়ী","mobile":"01704235070","lat":25.991093,"lon":89.680798,"falod":300,"bonaj":0,"oushodhi":0,"total":300,"fs":[],"bs":[],"os":[]},{"id":165,"sl":60,"upazila":"নাগেশ্বরী","name":"জননী নার্সারী","address":"বেরুবাড়ী","mobile":"01704235070","lat":25.991093,"lon":89.680798,"falod":3000,"bonaj":0,"oushodhi":0,"total":3000,"fs":[{"n":"পেঁয়ারা","q":500}],"bs":[],"os":[]},{"id":166,"sl":61,"upazila":"নাগেশ্বরী","name":"খাদিজা নার্সারী","address":"আলেপের তেপুতী","mobile":"01762848348","lat":26.020137,"lon":89.678485,"falod":29600,"bonaj":0,"oushodhi":0,"total":29600,"fs":[{"n":"আম","q":1000},{"n":"জাম","q":500},{"n":"কাঠাল","q":100}],"bs":[],"os":[]},{"id":167,"sl":62,"upazila":"নাগেশ্বরী","name":"খাদিজা নার্সারী","address":"আলেপের তেপুতী","mobile":"01762848348","lat":26.020137,"lon":89.678485,"falod":34600,"bonaj":1200,"oushodhi":0,"total":35800,"fs":[{"n":"চালতা","q":200},{"n":"পেঁয়ারা","q":50},{"n":"আম","q":50},{"n":"নারিকেল","q":20},{"n":"বড়ই","q":20}],"bs":[{"n":"মেহগনি","q":50},{"n":"কাটবাদাম","q":50}],"os":[]},{"id":168,"sl":63,"upazila":"নাগেশ্বরী","name":"রুবেল নার্সারী","address":"বাগডাঙ্গা","mobile":"01794254259","lat":25.991093,"lon":89.680798,"falod":101340,"bonaj":5900,"oushodhi":22900,"total":130140,"fs":[{"n":"চালতা","q":50},{"n":"জাম","q":500},{"n":"বড়ই","q":50},{"n":"নারিকেল","q":100},{"n":"চালতা","q":100}],"bs":[{"n":"মেহগনি","q":500},{"n":"মেহগনি","q":100},{"n":"মেহগনি","q":100},{"n":"ঘোরানিম","q":50},{"n":"কাটবাদাম","q":50}],"os":[{"n":"নিম","q":200},{"n":"এলোভেরা","q":50},{"n":"আমলকি","q":100}]},{"id":169,"sl":30,"upazila":"চিলমারী","name":"ইকরা এগ্রো নার্সারী","address":"শরিফের হাট, জোড়গাছ","mobile":"01925861220","lat":25.554677,"lon":89.620541,"falod":700,"bonaj":0,"oushodhi":0,"total":700,"fs":[{"n":"আম","q":150},{"n":"কাঠাঁল","q":150},{"n":"লিচু","q":100},{"n":"কামরাঙ্গা","q":150},{"n":"আপেল","q":50}],"bs":[],"os":[]},{"id":170,"sl":31,"upazila":"চিলমারী","name":"ইকরা এগ্রো নার্সারী","address":"শরিফের হাট, জোড়গাছ","mobile":"01925861220","lat":25.554677,"lon":89.620541,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":171,"sl":32,"upazila":"চিলমারী","name":"ইকরা এগ্রো নার্সারী","address":"শরিফের হাট, জোড়গাছ","mobile":"01925861220","lat":25.554677,"lon":89.620541,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":172,"sl":1,"upazila":"উলিপুর","name":"অমল চন্দ্র","address":"দূর্গাপুর, দূর্গাপুর","mobile":"01934088228","lat":25.730518,"lon":89.61928,"falod":0,"bonaj":400,"oushodhi":50,"total":450,"fs":[],"bs":[{"n":"মেহগনি","q":400}],"os":[{"n":"জাত নিম","q":50}]},{"id":173,"sl":2,"upazila":"উলিপুর","name":"নুর মোহাম্মদ","address":"তেলী পাড়া, মাদারটারী, ধরনীবাড়ী","mobile":"","lat":25.68154,"lon":89.62848,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":174,"sl":3,"upazila":"উলিপুর","name":"খগেন্দ্রনাথ সরকার","address":"বকর্সী গ্রাম, পাঁচপীর, দূর্গাপুর","mobile":"01774461998","lat":25.730518,"lon":89.61928,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":175,"sl":4,"upazila":"উলিপুর","name":"রাজেন্দ্রনাথ রায়","address":"মন্ডলপাড়া, পাঁচপীর, দূর্গাপুর","mobile":"01331379254","lat":25.730518,"lon":89.61928,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":176,"sl":5,"upazila":"উলিপুর","name":"মোঃ সাবান আলী","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01957707510","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":177,"sl":6,"upazila":"উলিপুর","name":"মোঃ মাঈদুল ইসলাম","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01921790890","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":178,"sl":7,"upazila":"উলিপুর","name":"মোঃ আঃ ছালাম","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01735276242","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":179,"sl":8,"upazila":"উলিপুর","name":"মোঃ গোলাম মোস্তফা","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01938328530","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":180,"sl":9,"upazila":"উলিপুর","name":"মোঃ এমদাদুল হক","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01701502416","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":181,"sl":10,"upazila":"উলিপুর","name":"মোঃ জয়নাল আবেদীন","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01761108045","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":182,"sl":11,"upazila":"উলিপুর","name":"মো জিয়াউর রহমান","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01755417233","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":183,"sl":12,"upazila":"উলিপুর","name":"মোঃ আইয়ুব আলী","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01957156827","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":184,"sl":13,"upazila":"উলিপুর","name":"মোঃ ইউনুছ আলী","address":"নার্সারী পাড়া, গুনাইগাছ","mobile":"01730188928","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":185,"sl":14,"upazila":"উলিপুর","name":"মোঃ ফুলবাবু মিয়া","address":"নারিকেলবাড়ী খামার, উলিপুর পৌরসভা","mobile":"01346271642","lat":25.67071,"lon":89.60797,"falod":150,"bonaj":0,"oushodhi":0,"total":150,"fs":[{"n":"আম","q":150}],"bs":[],"os":[]},{"id":186,"sl":15,"upazila":"উলিপুর","name":"মোঃ সাইদুর রহমান","address":"নারিকেলবাড়ী খামার, উলিপুর পৌরসভা","mobile":"01917772528","lat":25.67071,"lon":89.60797,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":187,"sl":16,"upazila":"উলিপুর","name":"মোঃ মিন্টু মিয়া","address":"নারিকেলবাড়ী খামার, উলিপুর পৌরসভা","mobile":"01742359762","lat":25.67071,"lon":89.60797,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":188,"sl":17,"upazila":"উলিপুর","name":"মোঃ মাঈদুল ইসলাম","address":"নারিকেলবাড়ী খামার, উলিপুর পৌরসভা","mobile":"01902617420","lat":25.67071,"lon":89.60797,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":189,"sl":18,"upazila":"উলিপুর","name":"মোঃ আনোয়ার হোসেন","address":"নারিকেলবাড়ী খামার, উলিপুর পৌরসভা","mobile":"01965360393","lat":25.67071,"lon":89.60797,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":190,"sl":19,"upazila":"উলিপুর","name":"মোঃ আঃ মজিদ","address":"নারিকেলবাড়ী ভাটিয়া পাড়া, উলিপুর পৌরসভা","mobile":"01762802103","lat":25.67071,"lon":89.60797,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":191,"sl":20,"upazila":"উলিপুর","name":"মোঃ আঃ ছাত্তার","address":"রামদাস ধনিরাম, উলিপুর পৌরসভা","mobile":"01916149191","lat":25.651,"lon":89.61969,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":192,"sl":21,"upazila":"উলিপুর","name":"মোঃ জিয়াউর রহমান","address":"নন্দু নেফড়া, শুকদেব, গুনাইগাছ","mobile":"01767332656","lat":25.630935,"lon":89.5773,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":193,"sl":22,"upazila":"উলিপুর","name":"মোঃ মোজাম্মেল হক মানিক","address":"রামদাস ধনিরাম, উলিপুর পৌরসভা","mobile":"01768989235","lat":25.651,"lon":89.61969,"falod":0,"bonaj":0,"oushodhi":0,"total":0,"fs":[],"bs":[],"os":[]},{"id":194,"sl":65,"upazila":"রৌমারী","name":"সিগ্ধ গার্ডেন এন্ড নার্সারী মোঃ হারুন অর রশিদ","address":"গ্রামঃ মন্ডল পাড়া, উপজেলাঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01917500635","lat":25.651,"lon":89.61969,"falod":35600,"bonaj":1000,"oushodhi":100,"total":36700,"fs":[{"n":"আম","q":1000},{"n":"মাল্টা","q":500},{"n":"কমলা","q":300},{"n":"আমড়া","q":500},{"n":"কাঠ বাদাম","q":1000}],"bs":[{"n":"মেহগনি","q":1000}],"os":[]},{"id":195,"sl":66,"upazila":"রৌমারী","name":"সফিকুল নার্সারী মোঃ সফিকুল ইসলাম","address":"গ্রামঃ রৌমারী গ্রাম, উপজেলা্ঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01936728707","lat":25.651,"lon":89.61969,"falod":5600,"bonaj":1000,"oushodhi":0,"total":6600,"fs":[{"n":"আম","q":1000}],"bs":[{"n":"মেহগনি","q":1000}],"os":[]},{"id":196,"sl":67,"upazila":"রৌমারী","name":"মোঃ সোহেল রানা গ্রামঃ মন্ডল পাড়া","address":"উপজেলা্ঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01922870097","lat":25.651,"lon":89.61969,"falod":2600,"bonaj":1000,"oushodhi":0,"total":3600,"fs":[],"bs":[],"os":[]},{"id":197,"sl":68,"upazila":"রৌমারী","name":"মোঃ মুসা মিয়া গ্রাম রৌমারী গ্রাম","address":"উপজেলাঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01962824857","lat":25.651,"lon":89.61969,"falod":1300,"bonaj":1900,"oushodhi":900,"total":4100,"fs":[{"n":"আম","q":300}],"bs":[{"n":"মেহগনি","q":300}],"os":[]},{"id":198,"sl":69,"upazila":"রৌমারী","name":"মোঃ আতিকুর রহমান","address":"গ্রামঃ মন্ডল পাড়া, উপজেলা্ঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01537174865","lat":25.651,"lon":89.61969,"falod":1800,"bonaj":2300,"oushodhi":100,"total":4200,"fs":[],"bs":[{"n":"মেহগনি","q":500}],"os":[]},{"id":199,"sl":70,"upazila":"রৌমারী","name":"মোঃআঃ ছালাম","address":"গ্রামঃ মন্ডল পাড়া, উপজেলা্ঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01962824312","lat":25.651,"lon":89.61969,"falod":1400,"bonaj":2200,"oushodhi":200,"total":3800,"fs":[],"bs":[{"n":"মেহগনি","q":500}],"os":[]},{"id":200,"sl":71,"upazila":"রৌমারী","name":"মোঃ খলিরুর রহমান","address":"গ্রামঃ রৌমারী গ্রাম, উপজেলা্ঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01936728707","lat":25.651,"lon":89.61969,"falod":0,"bonaj":0,"oushodhi":50,"total":50,"fs":[],"bs":[],"os":[]},{"id":201,"sl":72,"upazila":"রৌমারী","name":"মেসার্স স্বপ্নজয় নার্সারী মো: রেজাউল করিম গ্রামঃ যাদুরচর উপজেলা্ঃ রৌমারী","address":"জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01959321295","lat":25.651,"lon":89.61969,"falod":6900,"bonaj":2000,"oushodhi":1000,"total":9900,"fs":[],"bs":[],"os":[]},{"id":202,"sl":73,"upazila":"রৌমারী","name":"মেসার্স আকাশ নার্সারী মো: বাচ্চু মিয়া গ্রামঃ যাদুরচর পূর্ব পাড়া উপজেলা: রৌমারী","address":"জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01959321295","lat":25.651,"lon":89.61969,"falod":7600,"bonaj":1000,"oushodhi":700,"total":9300,"fs":[],"bs":[],"os":[]},{"id":203,"sl":74,"upazila":"রৌমারী","name":"মেসার্স নিলাচল নার্সারী মোঃ মাইদুল ইসলাম","address":"গ্রামঃ কর্তিমারী বাজারপাড়া, উপজেলাঃ রৌমারী, জেলাঃ কুড়িগ্রাম, মোবাইল নং","mobile":"01960107066","lat":25.651,"lon":89.61969,"falod":9600,"bonaj":1000,"oushodhi":300,"total":10900,"fs":[],"bs":[],"os":[]},{"id":204,"sl":75,"upazila":"রৌমারী","name":"মেসার্স শ্রেষ্ট গার্ডেন এন্ড নার্সারী মো: তায়াত মাহাতাব হ্দয় গ্রামঃ ধনারচর নতুন গ্রাম উপজেলা: রৌমারী","address":"জেলাঃ কুড়িগ্রাম, ম","mobile":"01915959969","lat":25.651,"lon":89.61969,"falod":8500,"bonaj":2500,"oushodhi":1000,"total":12000,"fs":[],"bs":[],"os":[]}];
+
+const UPAZILA_CENTERS = {
+  'কুড়িগ্রাম সদর':[25.7439,89.6381],'নাগেশ্বরী':[25.9717,89.9088],
+  'ফুলবাড়ী':[25.9500,89.5333],'রাজারহাট':[25.8500,89.6167],
+  'উলিপুর':[25.6667,89.5833],'রৌমারী':[25.5167,89.7833],
+  'ভূরুঙ্গামারী':[26.0000,89.7167],'চর রাজিবপুর':[25.4167,89.8167],
+  'চিলমারী':[25.5500,89.6833]
+};
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let db = JSON.parse(localStorage.getItem('ndb') || 'null') || SEED.map(n=>({...n}));
+let activeTab = 'map';
+let activeUpazila = '';
+let activeFilter = 'all';
+let activeMapFilter = 'all';
+let activeSort = 'sl';
+let searchQ = '';
+let curN = null;
+let editN = null;
+let map, mLayer, markers = {};
+
+// ═══════════════════════════════════════════════════════════
+//  MAP
+// ═══════════════════════════════════════════════════════════
+function initMap(){
+  map = L.map('map',{center:[23.685,90.3563],zoom:7,zoomControl:true});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
+  }).addTo(map);
+  mLayer = L.layerGroup().addTo(map);
+  renderMarkers();
+}
+
+function mkIcon(n){
+  const gps=n.lat&&n.lon, mob=!!n.mobile;
+  const c = !gps?'#c0392b': !mob?'#d97706':'#2e8b57';
+  const r = n.total>50000?8: n.total>10000?7:6;
+  return L.divIcon({
+    html:`<div style="width:${r*2}px;height:${r*2}px;border-radius:50%;background:${c};border:2px solid rgba(255,255,255,.9);box-shadow:0 1px 5px rgba(0,0,0,.35)"></div>`,
+    className:'',iconSize:[r*2,r*2],iconAnchor:[r,r],popupAnchor:[0,-r-2]
+  });
+}
+
+function renderMarkers(){
+  mLayer.clearLayers(); markers={};
+  const list = getFiltered();
+  const mf = activeMapFilter;
+  list.forEach(n=>{
+    if(!n.lat||!n.lon) return;
+    if(mf==='ok' && (!n.mobile||!n.lat)) return;
+    if(mf==='nomob' && n.mobile) return;
+    if(mf==='nogps') return; // GPS-less can't be shown
+    const m=L.marker([n.lat,n.lon],{icon:mkIcon(n)}).addTo(mLayer);
+    m.bindPopup(mkPopup(n),{maxWidth:270,minWidth:200});
+    m.on('click',()=>showDet(n));
+    markers[n.id]=m;
+  });
+  // legend counts
+  const vis = activeMapFilter==='all'?list:list.filter(n=>n.lat&&n.lon);
+  document.getElementById('lc-ok').textContent  = vis.filter(n=>n.lat&&n.mobile).length;
+  document.getElementById('lc-mob').textContent = vis.filter(n=>n.lat&&!n.mobile).length;
+  document.getElementById('lc-gps').textContent = list.filter(n=>!n.lat||!n.lon).length;
+}
+
+function mkPopup(n){
+  const mob = n.mobile
+    ? `<a href="tel:${n.mobile}" style="color:var(--leaf2);font-weight:700">${n.mobile}</a>`
+    : `<span style="color:var(--amber);font-weight:700">অনুপস্থিত</span>`;
+  const tot=(n.total||0).toLocaleString();
+  return `<div class="pop-name">${n.name}</div>
+  <div class="pop-sub">${n.upazila} উপজেলা &nbsp;·&nbsp; #${n.sl}</div>
+  <div class="pop-row"><span class="pl">📞</span><span class="pv">${mob}</span></div>
+  <div class="pop-row"><span class="pl">🌱</span><span class="pv">মোট: ${tot} চারা</span></div>
+  <div class="pop-row"><span class="pl">🍎</span><span class="pv">ফলদ ${(n.falod||0).toLocaleString()} &nbsp;🌲 বনজ ${(n.bonaj||0).toLocaleString()}</span></div>
+  <div class="pop-actions">
+    <button class="pa pa-g" onclick="openEditById(${n.id})">✏️ আপডেট</button>
+    ${n.mobile?`<a class="pa pa-w" href="tel:${n.mobile}">📞 কল</a>`:`<button class="pa pa-w" onclick="openEditById(${n.id})">📞 নম্বর দিন</button>`}
+  </div>`;
+}
+
+function flyTo(n){
+  if(!n?.lat||!n?.lon){toast('❌ GPS নেই');return}
+  map.flyTo([n.lat,n.lon],16,{duration:1.2});
+  if(markers[n.id]) markers[n.id].openPopup();
+  setTab('map');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILTER / SORT
+// ═══════════════════════════════════════════════════════════
+function getFiltered(){
+  let list=[...db];
+  if(activeUpazila) list=list.filter(n=>n.upazila===activeUpazila);
+  if(searchQ){
+    const q=searchQ.toLowerCase();
+    list=list.filter(n=>n.name.toLowerCase().includes(q)||n.mobile.includes(q)||n.upazila.includes(q)||(n.address||'').toLowerCase().includes(q));
+  }
+  if(activeFilter==='nomob') list=list.filter(n=>!n.mobile);
+  if(activeFilter==='nogps') list=list.filter(n=>!n.lat||!n.lon);
+  const s=activeSort;
+  if(s==='total') list.sort((a,b)=>(b.total||0)-(a.total||0));
+  else if(s==='name') list.sort((a,b)=>a.name.localeCompare(b.name,'bn'));
+  else if(s==='miss') list.sort((a,b)=>{
+    const sa=(!a.mobile?2:0)+(!a.lat?1:0), sb=(!b.mobile?2:0)+(!b.lat?1:0);
+    return sb-sa;
+  });
+  else list.sort((a,b)=>a.sl-b.sl);
+  return list;
+}
+
+function getMissing(){ return db.filter(n=>!n.mobile); }
+function getNById(id){ return db.find(n=>n.id===id); }
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER LIST
+// ═══════════════════════════════════════════════════════════
+function renderList(){
+  const wrap=document.getElementById('list-wrap');
+  const list=getFiltered();
+  if(!list.length){
+    wrap.innerHTML=`<div class="empty"><div class="eico">🔍</div><p>কোনো নার্সারি পাওয়া যায়নি</p></div>`;
+    return;
+  }
+  wrap.innerHTML=list.map((n,i)=>{
+    const gps=n.lat&&n.lon, mob=!!n.mobile;
+    let cls=gps&&mob?'c-ok': !mob&&!gps?'c-both': !mob?'c-mob':'c-gps';
+    const gpsc=gps?'chip chip-g':'chip chip-r';
+    const mobc=mob?'chip chip-g':'chip chip-a';
+    const tot=n.total>0?`<span class="chip chip-b">🌱 ${n.total.toLocaleString()}</span>`:'';
+    return `<div class="ncard ${cls} ${curN?.id===n.id?'sel':''}" onclick="showDet(getNById(${n.id}))" style="animation-delay:${Math.min(i*15,250)}ms">
+      <div class="nc-top">
+        <span class="nc-sl">${n.sl}</span>
+        <span class="nc-name">${n.name}</span>
+        <span class="nc-upz">${n.upazila}</span>
+      </div>
+      <div class="nc-meta">
+        <span class="${gpsc}">${gps?'📍 GPS':'❌ GPS নেই'}</span>
+        <span class="${mobc}">${mob?'📞 '+n.mobile:'📞 নেই'}</span>
+        ${tot}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UPAZILA PILLS
+// ═══════════════════════════════════════════════════════════
+function renderUpazilaBar(){
+  const bar=document.getElementById('upazila-bar');
+  const all=[...new Set(db.map(n=>n.upazila))].sort();
+  bar.innerHTML=`<div class="up-pill on" id="up-all" onclick="setUpazila('')">সব <span class="uc">${db.length}</span></div>`
+    +all.map(u=>`<div class="up-pill" id="up-${u.replace(/\s/g,'_')}" onclick="setUpazila('${u}')">${u} <span class="uc">${db.filter(n=>n.upazila===u).length}</span></div>`).join('');
+}
+
+function setUpazila(u){
+  activeUpazila=u;
+  document.querySelectorAll('.up-pill').forEach(p=>p.classList.remove('on'));
+  const id=u?`up-${u.replace(/\s/g,'_')}`:'up-all';
+  document.getElementById(id)?.classList.add('on');
+  renderList(); renderMarkers();
+  if(u&&UPAZILA_CENTERS[u]) map.flyTo(UPAZILA_CENTERS[u],12,{duration:1});
+  else map.flyTo([25.73,89.64],10,{duration:1});
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UPAZILA STATS PANE
+// ═══════════════════════════════════════════════════════════
+function renderUpazilaPane(){
+  const pane=document.getElementById('upazila-pane');
+  const all=[...new Set(db.map(n=>n.upazila))].sort();
+  const maxT=Math.max(...all.map(u=>db.filter(n=>n.upazila===u).reduce((s,n)=>s+(n.total||0),0)));
+  pane.innerHTML=all.map(u=>{
+    const g=db.filter(n=>n.upazila===u);
+    const tot=g.reduce((s,n)=>s+(n.total||0),0);
+    const nm=g.filter(n=>!n.mobile).length;
+    const ng=g.filter(n=>!n.lat||!n.lon).length;
+    const pct=maxT?Math.round(tot/maxT*100):0;
+    return `<div class="up-card" onclick="setUpazila('${u}');setTab('list')">
+      <div class="up-card-top">
+        <span class="up-card-name">${u}</span>
+        <span class="chip chip-g">${g.length} নার্সারি</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="up-stats">
+        <span class="us">🌱 <b>${tot.toLocaleString()}</b> চারা</span>
+        <span class="us">${nm?`📞 <b style="color:var(--amber)">${nm}</b> মোবাইল নেই`:'📞 <b style="color:var(--leaf2)">সম্পূর্ণ</b>'}</span>
+        <span class="us">${ng?`📍 <b style="color:var(--red)">${ng}</b> GPS নেই`:'📍 <b style="color:var(--leaf2)">সম্পূর্ণ</b>'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MISSING MOBILE PANE
+// ═══════════════════════════════════════════════════════════
+function renderMissingPane(){
+  const pane=document.getElementById('missing-pane');
+  const list=getMissing();
+  if(!list.length){
+    pane.innerHTML=`<div class="empty"><div class="eico">🎉</div><p>সব নার্সারির মোবাইল নম্বর সংগ্রহ করা হয়েছে!</p></div>`;
+    return;
+  }
+  pane.innerHTML=list.map(n=>`<div class="miss-card" onclick="openEditById(${n.id})">
+    <div class="miss-icon">${!n.lat?'🚨':'📞'}</div>
+    <div class="miss-info">
+      <div class="miss-name">${n.name}</div>
+      <div class="miss-sub">${n.upazila} · #${n.sl} ${!n.lat?'· GPS নেই':''}</div>
+    </div>
+    <button class="miss-btn" onclick="event.stopPropagation();openEditById(${n.id})">নম্বর দিন</button>
+  </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DETAIL
+// ═══════════════════════════════════════════════════════════
+function showDet(n){
+  if(!n) return;
+  curN=n;
+  closeAllPanes();
+  document.getElementById('det-pane').classList.add('on');
+  document.getElementById('list-pane').style.display='none';
+  document.getElementById('d-name').textContent=n.name;
+  document.getElementById('d-sub').textContent=`${n.upazila} উপজেলা · ক্রম #${n.sl}`;
+  document.getElementById('d-lat').textContent=n.lat||'নেই';
+  document.getElementById('d-lon').textContent=n.lon||'নেই';
+  document.getElementById('d-gps').innerHTML=n.lat?'<span style="color:var(--leaf2)">✅ বৈধ GPS</span>':'<span style="color:var(--red)">❌ নেই</span>';
+  document.getElementById('d-mobile').innerHTML=n.mobile
+    ?`<a href="tel:${n.mobile}" style="color:var(--leaf2);font-weight:700">${n.mobile}</a>`
+    :'<span style="color:var(--amber);font-weight:700">অনুপস্থিত — আপডেট করুন</span>';
+  document.getElementById('d-addr').textContent=n.address||'—';
+  document.getElementById('d-falod').textContent=(n.falod||0).toLocaleString('bn-BD');
+  document.getElementById('d-bonaj').textContent=(n.bonaj||0).toLocaleString('bn-BD');
+  document.getElementById('d-oushodhi').textContent=(n.oushodhi||0).toLocaleString('bn-BD');
+  document.getElementById('d-total').textContent=(n.total||0).toLocaleString('bn-BD');
+  const callBtn=document.getElementById('d-call');
+  if(n.mobile){callBtn.style.display='block'}else{callBtn.style.display='none'}
+  // species
+  const allSp=[...(n.fs||[]),...(n.bs||[]),...(n.os||[])];
+  const spBox=document.getElementById('d-species-box');
+  const spEl=document.getElementById('d-species');
+  if(allSp.length){
+    spBox.style.display='';
+    spEl.innerHTML=allSp.map(s=>`<div class="species-row"><span>${s.n}</span><b>${(s.q||0).toLocaleString()}</b></div>`).join('');
+  } else spBox.style.display='none';
+  if(n.lat&&n.lon&&markers[n.id]){map.flyTo([n.lat,n.lon],14,{duration:.9});markers[n.id].openPopup()}
+}
+
+function closeDet(){
+  document.getElementById('det-pane').classList.remove('on');
+  document.getElementById('list-pane').style.display='';
+  renderList();
+}
+
+function callNum(){ if(curN?.mobile) window.location.href='tel:'+curN.mobile; }
+
+// ═══════════════════════════════════════════════════════════
+//  EDIT
+// ═══════════════════════════════════════════════════════════
+function openEdit(n){
+  editN=n;
+  document.getElementById('det-pane').classList.remove('on');
+  document.getElementById('edit-pane').classList.add('on');
+  document.getElementById('list-pane').style.display='none';
+  document.getElementById('edit-sub').textContent=`${n.upazila} · #${n.sl}`;
+  document.getElementById('f-name').value=n.name||'';
+  document.getElementById('f-addr').value=n.address||'';
+  document.getElementById('f-mobile').value=n.mobile||'';
+  document.getElementById('f-lat').value=n.lat||'';
+  document.getElementById('f-lon').value=n.lon||'';
+  document.getElementById('f-falod').value=n.falod||0;
+  document.getElementById('f-bonaj').value=n.bonaj||0;
+  document.getElementById('f-oushodhi').value=n.oushodhi||0;
+  const gs=document.getElementById('gps-status');
+  gs.className='fhint'; gs.textContent=n.lat?`📍 বর্তমান: ${n.lat}, ${n.lon}`:'📡 GPS নেই — 📡 বোতাম চাপুন';
+  if(!n.mobile) setTimeout(()=>document.getElementById('f-mobile').focus(),100);
+}
+
+function openEditById(id){
+  const n=getNById(id);
+  if(!n) return;
+  curN=n; closeAllPanes();
+  document.getElementById('list-pane').style.display='none';
+  openEdit(n);
+}
+
+function closeEdit(){
+  document.getElementById('edit-pane').classList.remove('on');
+  if(curN){ showDet(curN) }
+  else{ document.getElementById('list-pane').style.display=''; renderList(); }
+}
+
+function saveEdit(){
+  const n=editN; if(!n) return;
+  const mob=document.getElementById('f-mobile').value.trim();
+  if(mob&&(mob.length!==11||!mob.startsWith('0'))){
+    toast('⚠️ সঠিক নম্বর দিন: ১১ সংখ্যা, ০ দিয়ে শুরু'); return;
+  }
+  n.name=document.getElementById('f-name').value.trim()||n.name;
+  n.address=document.getElementById('f-addr').value.trim();
+  n.mobile=mob;
+  const lat=parseFloat(document.getElementById('f-lat').value);
+  const lon=parseFloat(document.getElementById('f-lon').value);
+  n.lat=(!isNaN(lat)&&lat>20&&lat<30)?lat:null;
+  n.lon=(!isNaN(lon)&&lon>85&&lon<95)?lon:null;
+  n.falod=parseInt(document.getElementById('f-falod').value)||0;
+  n.bonaj=parseInt(document.getElementById('f-bonaj').value)||0;
+  n.oushodhi=parseInt(document.getElementById('f-oushodhi').value)||0;
+  n.total=n.falod+n.bonaj+n.oushodhi;
+  n.updatedAt=new Date().toISOString();
+  n.updatedBy=activeUpazila||'field';
+  saveDB(); renderMarkers(); updateBadges();
+  curN=n; showDet(n);
+  document.getElementById('edit-pane').classList.remove('on');
+  toast('✅ সংরক্ষিত হয়েছে');
+}
+
+function newNursery(){
+  const n={id:Date.now(),sl:db.length+1,upazila:activeUpazila||'',
+    name:'',address:'',mobile:'',lat:null,lon:null,falod:0,bonaj:0,oushodhi:0,total:0,
+    fs:[],bs:[],os:[],isNew:true};
+  db.push(n); curN=n;
+  closeAllPanes(); document.getElementById('list-pane').style.display='none';
+  openEdit(n); document.getElementById('edit-sub').textContent='নতুন নার্সারি';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GPS CAPTURE
+// ═══════════════════════════════════════════════════════════
+function grabGPS(){
+  const s=document.getElementById('gps-status');
+  s.className='fhint'; s.textContent='🔄 GPS সংকেত নেওয়া হচ্ছে...';
+  if(!navigator.geolocation){s.className='fhint err';s.textContent='❌ এই ডিভাইসে GPS নেই';return}
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat=Math.round(pos.coords.latitude*1e6)/1e6;
+    const lon=Math.round(pos.coords.longitude*1e6)/1e6;
+    document.getElementById('f-lat').value=lat;
+    document.getElementById('f-lon').value=lon;
+    s.className='fhint ok';
+    s.textContent=`✅ পাওয়া গেছে: ${lat}, ${lon} (±${Math.round(pos.coords.accuracy)}মি)`;
+    toast('📍 GPS অবস্থান নেওয়া হয়েছে');
+  },err=>{
+    s.className='fhint err';
+    s.textContent='❌ GPS পাওয়া যায়নি। সেটিংসে Location চালু আছে কি?';
+  },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TAB NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function setTab(tab){
+  activeTab=tab;
+  ['map','list','missing','upazila'].forEach(t=>{
+    document.getElementById('tab-'+t)?.classList.toggle('on',t===tab);
+  });
+  const isMap=tab==='map';
+  document.getElementById('mapview').style.display=isMap?'':'none';
+  document.getElementById('panel').style.display=isMap?'':'flex';
+  if(!isMap){
+    document.getElementById('upazila-bar').style.display=tab==='upazila'?'none':'';
+    document.getElementById('filter-row').style.display=tab==='list'?'':'none';
+    document.getElementById('export-bar').style.display='';
+    closeAllPanes();
+    document.getElementById('list-pane').style.display=tab==='list'?'':'none';
+    document.getElementById('upazila-pane').classList.toggle('on',tab==='upazila');
+    document.getElementById('missing-pane').classList.toggle('on',tab==='missing');
+    if(tab==='list') renderList();
+    if(tab==='upazila') renderUpazilaPane();
+    if(tab==='missing') renderMissingPane();
+  } else {
+    // On desktop show both
+    document.getElementById('mapview').style.display='';
+    document.getElementById('panel').style.display='';
+    document.getElementById('list-pane').style.display='';
+    renderList();
+  }
+}
+
+// Handle responsive layout
+function checkLayout(){
+  const w=window.innerWidth;
+  if(w>700){
+    // Desktop: always show both
+    document.getElementById('mapview').style.display='';
+    document.getElementById('panel').style.display='';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILTER CONTROLS
+// ═══════════════════════════════════════════════════════════
+function setFilter(f){
+  activeFilter=f;
+  ['all','nomob','nogps'].forEach(k=>{
+    document.getElementById('fc-'+k)?.classList.toggle('on',k===f);
+  });
+  renderList(); renderMarkers();
+}
+
+function setMapFilter(f){
+  activeMapFilter=f;
+  ['all','ok','nomob','nogps'].forEach(k=>{
+    document.getElementById('mf-'+k)?.classList.toggle('on',k===f);
+  });
+  renderMarkers();
+}
+
+function reSort(){
+  activeSort=document.getElementById('sort-sel').value;
+  renderList();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STORAGE & EXPORT
+// ═══════════════════════════════════════════════════════════
+function saveDB(){ localStorage.setItem('ndb',JSON.stringify(db)); }
+
+function exportAll(){
+  const updated=db.filter(n=>n.updatedAt);
+  if(!updated.length){toast('⚠️ কোনো আপডেট নেই');return}
+  const rows=[['ক্র.','উপজেলা','নাম','ঠিকানা','মোবাইল','অক্ষাংশ','দ্রাঘিমাংশ','ফলদ','বনজ','ঔষধি','মোট','আপডেট','কারী']];
+  updated.forEach(n=>rows.push([n.sl,n.upazila,n.name,n.address||'',n.mobile,n.lat||'',n.lon||'',n.falod,n.bonaj,n.oushodhi,n.total,n.updatedAt||'',n.updatedBy||'']));
+  dlCSV(rows,`nursery_updates_${new Date().toISOString().slice(0,10)}.csv`);
+  toast(`✅ ${updated.length}টি রেকর্ড রপ্তানি হয়েছে`);
+}
+
+function exportFull(){
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`nursery_full_${new Date().toISOString().slice(0,10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('📋 সম্পূর্ণ ডেটা রপ্তানি হয়েছে');
+}
+
+function exportOne(){
+  const n=editN||curN; if(!n) return;
+  dlCSV([['ক্র.','উপজেলা','নাম','মোবাইল','অক্ষাংশ','দ্রাঘিমাংশ','মোট'],
+         [n.sl,n.upazila,n.name,n.mobile,n.lat||'',n.lon||'',n.total]],
+    `nursery_${n.sl}.csv`);
+}
+
+function dlCSV(rows,filename){
+  const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=filename; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BADGES & COUNTS
+// ═══════════════════════════════════════════════════════════
+function updateBadges(){
+  const m=getMissing().length;
+  document.getElementById('notif-badge').textContent=m;
+  document.getElementById('fab-badge').textContent=m;
+  document.getElementById('tab-missing').innerHTML=`<span class="ti">📞</span>মোবাইল নেই (${m})`;
+}
+
+function closeAllPanes(){
+  document.getElementById('det-pane').classList.remove('on');
+  document.getElementById('edit-pane').classList.remove('on');
+  document.getElementById('upazila-pane').classList.remove('on');
+  document.getElementById('missing-pane').classList.remove('on');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+let toastT;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('on'),2800);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SEARCH
+// ═══════════════════════════════════════════════════════════
+document.getElementById('searchbox').addEventListener('input',e=>{
+  searchQ=e.target.value.trim();
+  renderList(); renderMarkers();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  initMap();
+  renderUpazilaBar();
+  renderList();
+  updateBadges();
+  checkLayout();
+  window.addEventListener('resize',checkLayout);
+  // Default desktop: show map+panel together
+  if(window.innerWidth>700){
+    document.getElementById('mapview').style.display='';
+    document.getElementById('panel').style.display='';
+  }
+});
+</script>
+</body>
+</html>
