@@ -470,6 +470,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <button class="mf-btn" id="mf-ok" onclick="setMapFilter('ok')">✅ সম্পূর্ণ</button>
         <button class="mf-btn" id="mf-nomob" onclick="setMapFilter('nomob')">📞 মোবাইল নেই</button>
         <button class="mf-btn" id="mf-nogps" onclick="setMapFilter('nogps')">📍 GPS নেই</button>
+        <button class="mf-btn" id="mf-osm" onclick="toggleOSM()" style="border-color:#2563eb;color:#2563eb">🌐 OSM নার্সারি</button>
       </div>
       <div id="map-legend">
         <div class="lg-row">
@@ -483,6 +484,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--fon
         <div class="lg-row">
           <div class="lg-dot" style="background:#c0392b"></div>GPS নেই
           <span class="lg-count" id="lc-gps">0</span>
+        </div>
+        <div class="lg-row" style="border-top:1px solid var(--border);padding-top:5px;margin-top:4px">
+          <div class="lg-dot" style="background:#2563eb"></div>OSM নার্সারি
+          <span class="lg-count" id="lc-osm">0</span>
         </div>
       </div>
     </div>
@@ -651,7 +656,8 @@ let activeSort = 'sl';
 let searchQ = '';
 let curN = null;
 let editN = null;
-let map, mLayer, markers = {};
+let map, mLayer, osmLayer, markers = {}, osmMarkers = [];
+let osmVisible = false;
 
 // ═══════════════════════════════════════════════════════════
 //  MAP
@@ -662,6 +668,7 @@ function initMap(){
     attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a>',maxZoom:19
   }).addTo(map);
   mLayer = L.layerGroup().addTo(map);
+  osmLayer = L.layerGroup();
   renderMarkers();
 }
 
@@ -694,6 +701,106 @@ function renderMarkers(){
   document.getElementById('lc-ok').textContent  = vis.filter(n=>n.lat&&n.mobile).length;
   document.getElementById('lc-mob').textContent = vis.filter(n=>n.lat&&!n.mobile).length;
   document.getElementById('lc-gps').textContent = list.filter(n=>!n.lat||!n.lon).length;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  OSM NURSERY OVERLAY (Overpass API)
+// ═══════════════════════════════════════════════════════════
+let osmDebounce;
+let osmLoading = false;
+let lastOsmBounds = null;
+
+function toggleOSM(){
+  osmVisible = !osmVisible;
+  const btn = document.getElementById('mf-osm');
+  if(osmVisible){
+    btn.classList.add('on');
+    btn.style.background = '#2563eb'; btn.style.color = '#fff'; btn.style.borderColor = '#2563eb';
+    osmLayer.addTo(map);
+    fetchOSMNurseries();
+    map.on('moveend', onMapMoveForOsm);
+  } else {
+    btn.classList.remove('on');
+    btn.style.background = ''; btn.style.color = '#2563eb'; btn.style.borderColor = '#2563eb';
+    map.removeLayer(osmLayer);
+    map.off('moveend', onMapMoveForOsm);
+    osmLayer.clearLayers(); osmMarkers = [];
+    document.getElementById('lc-osm').textContent = '0';
+    lastOsmBounds = null;
+  }
+}
+
+function onMapMoveForOsm(){
+  clearTimeout(osmDebounce);
+  osmDebounce = setTimeout(fetchOSMNurseries, 600);
+}
+
+function fetchOSMNurseries(){
+  if(osmLoading) return;
+  const b = map.getBounds();
+  const pad = 0.15;
+  const s = b.getSouth() - pad, n = b.getNorth() + pad;
+  const w = b.getWest() - pad, e = b.getEast() + pad;
+  // Clamp to Bangladesh approx bounds
+  const cs = Math.max(s, 20.3), cn = Math.min(n, 26.7);
+  const cw = Math.max(w, 87.8), ce = Math.min(e, 92.9);
+  const bStr = `${cs},${cw},${cn},${ce}`;
+  // Skip if same bounds
+  if(lastOsmBounds === bStr) return;
+  lastOsmBounds = bStr;
+  osmLoading = true;
+
+  const query = `[out:json][timeout:25];(node["shop"="nursery"](${bStr});node["shop"="garden_centre"](${bStr});way["shop"="nursery"](${bStr});way["shop"="garden_centre"](${bStr});node["landuse"="nursery"](${bStr});way["landuse"="nursery"](${bStr}););out center;`;
+  const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      osmLoading = false;
+      osmLayer.clearLayers(); osmMarkers = [];
+      const els = data.elements || [];
+      els.forEach(el => {
+        let lat, lon;
+        if(el.type === 'node'){ lat = el.lat; lon = el.lon; }
+        else if(el.center){ lat = el.center.lat; lon = el.center.lon; }
+        else return;
+        if(!lat || !lon) return;
+        const tags = el.tags || {};
+        const name = tags['name:bn'] || tags.name || 'নামবিহীন নার্সারি';
+        const shopType = tags.shop || tags.landuse || '';
+        const operator = tags.operator || tags['operator:bn'] || '';
+        const phone = tags.phone || tags['contact:phone'] || '';
+        const website = tags.website || '';
+        const addr = [tags['addr:street'], tags['addr:city'], tags['addr:subdistrict']].filter(Boolean).join(', ');
+
+        const icon = L.divIcon({
+          html: `<div style="width:16px;height:16px;border-radius:50%;background:#2563eb;border:2.5px solid #93c5fd;box-shadow:0 1px 6px rgba(37,99,235,.45);display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">🌱</div>`,
+          className: '', iconSize: [16, 16], iconAnchor: [8, 8], popupAnchor: [0, -10]
+        });
+
+        let popHtml = `<div style="font-family:var(--font);min-width:180px">
+          <div style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:4px">🌐 OSM ${shopType === 'nursery' ? 'নার্সারি' : shopType === 'garden_centre' ? 'গার্ডেন সেন্টার' : 'নার্সারি'}</div>
+          <div style="font-size:14px;font-weight:700;color:#0d1f15;margin-bottom:4px">${name}</div>`;
+        if(operator) popHtml += `<div style="font-size:11px;color:#4a6858;margin-bottom:3px">👤 ${operator}</div>`;
+        if(addr) popHtml += `<div style="font-size:11px;color:#4a6858;margin-bottom:3px">📍 ${addr}</div>`;
+        if(phone) popHtml += `<div style="font-size:11px;color:#1a5c38;margin-bottom:3px;font-weight:700">📞 <a href="tel:${phone}" style="color:#1a5c38">${phone}</a></div>`;
+        if(website) popHtml += `<div style="font-size:11px;margin-bottom:3px">🌐 <a href="${website}" target="_blank" style="color:#2563eb">${website.replace(/^https?:\\/\\//, '')}</a></div>`;
+        popHtml += `<div style="font-size:9px;color:#999;margin-top:5px">OpenStreetMap ID: ${el.type}/${el.id}</div></div>`;
+
+        const m = L.marker([lat, lon], { icon }).bindPopup(popHtml, { maxWidth: 280, minWidth: 180 });
+        osmMarkers.push(m);
+        osmLayer.addLayer(m);
+      });
+      document.getElementById('lc-osm').textContent = osmMarkers.length;
+      if(osmMarkers.length > 0){
+        toast(`🌐 ${osmMarkers.length}টি OSM নার্সারি পাওয়া গেছে`);
+      }
+    })
+    .catch(err => {
+      osmLoading = false;
+      console.error('Overpass API error:', err);
+      document.getElementById('lc-osm').textContent = '!';
+    });
 }
 
 function mkPopup(n){
@@ -793,7 +900,7 @@ function setUpazila(u){
   document.getElementById(id)?.classList.add('on');
   renderList(); renderMarkers();
   if(u&&UPAZILA_CENTERS[u]) map.flyTo(UPAZILA_CENTERS[u],12,{duration:1});
-  else map.flyTo([25.73,89.64],10,{duration:1});
+  else map.flyTo([23.685,90.3563],7,{duration:1});
 }
 
 // ═══════════════════════════════════════════════════════════
