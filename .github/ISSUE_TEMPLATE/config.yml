@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Project Documentation
+    url: https://github.com/moniruzjaman/kurigram_nursery_registry#readme
+    about: Please read the README and BUILD_GUIDE before opening an issue.
+  - name: 💬 General Question
+    url: https://github.com/moniruzjaman/kurigram_nursery_registry/discussions
+    about: For general questions and discussions, please use GitHub Discussions.

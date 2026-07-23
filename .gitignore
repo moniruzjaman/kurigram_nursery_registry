@@ -31,25 +31,45 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+# IMPORTANT: .env must NEVER be committed — contains DATABASE_URL and secrets
+.env
+.env.*
 !.env.example
 
 # vercel
 .vercel
 
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local config / runtime
 local-*
 .claude
 .z-ai-config
+
+# logs (dev server tees output here)
 *.log
 dev.log
 dev.out.log
+server.log
+
+# runtime PID files
+*.pid
+.zscripts/dev.pid
+
+# scratch / temp
 test
 prompt
+tmp/
 
-server.log
-# Skills directory
+# database (local SQLite)
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# backups
+backups/
+
+# Skills directory (auto-generated, not part of app source)
 /skills/

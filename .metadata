@@ -1,10 +1,33 @@
-# This file tracks properties of this Flutter project.
-# Used by Flutter tool to assess capabilities and perform upgrades etc.
+# This file tracks project-level metadata for the Kurigram Nursery Registry.
+# Used by build tooling and contributors to identify the project type and stack.
 #
-# This file should be version controlled and should not be manually edited.
+# This file should be version controlled.
 
-version:
-  revision: "flutter-stable"
-  channel: "stable"
+project:
+  name: kurigram-nursery-registry
+  type: web-app
+  framework: nextjs
+  framework_version: "16"
+  language: typescript
+  ui_library: shadcn/ui
+  styling: tailwindcss
+  orm: prisma
+  database: sqlite (default) / postgresql (production)
 
-project_type: app
+build:
+  package_manager: bun (preferred) | npm
+  build_command: "next build"
+  dev_command: "next dev"
+  output_mode: standalone
+
+deployment:
+  primary_target: vercel
+  alternatives:
+    - self-host (bun + caddy)
+    - docker
+    - static pwa bundle (download/)
+
+repository:
+  url: https://github.com/moniruzjaman/kurigram_nursery_registry
+  license: MIT
+  maintainer: moniruzjaman
