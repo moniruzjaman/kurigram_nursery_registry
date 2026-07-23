@@ -14,16 +14,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nursery Registry - Kurigram District",
-  description: "GIS & Inventory Management System for Plant Nurseries in Kurigram District. 137 nurseries with GPS, mobile, and inventory data.",
-  keywords: ["nursery", "Kurigram", "GIS", "inventory", "Bangladesh", "plant nursery"],
+  title: "Kurigram Nursery Registry",
+  description: "GIS & Inventory Management System for Plant Nurseries in Kurigram District, Bangladesh. 137 nurseries with GPS, mobile, and inventory data.",
+  keywords: ["nursery", "Kurigram", "GIS", "inventory", "Bangladesh", "plant nursery", "seedlings"],
   authors: [{ name: "DAE Kurigram" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
   openGraph: {
-    title: "Nursery Registry - Kurigram District",
-    description: "GIS & Inventory Management for Plant Nurseries",
+    title: "Kurigram Nursery Registry",
+    description: "GIS & Inventory Management for Plant Nurseries in Kurigram District",
     type: "website",
   },
 };
