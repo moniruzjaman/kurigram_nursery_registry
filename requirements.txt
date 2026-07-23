@@ -1,0 +1,14 @@
+# Python dependencies for the project's Python scripts (skills/, etc.)
+# Used by the GitHub Actions pylint workflow (.github/workflows/pylint.yml)
+# and by other Python helper functions in this repository.
+#
+# Linter / workflow
+pylint>=4.0,<5.0
+
+# Third-party runtime imports used by tracked *.py files
+Pillow>=10.0.0           # PIL.Image, ImageDraw, ImageFont
+openpyxl>=3.1.0          # xlsx read/write
+python-pptx>=0.6.21      # pptx Presentation / shapes / enums
+lxml>=4.9.0              # lxml.etree (XML processing)
+defusedxml>=0.7.0        # safer XML parsing
+PyYAML>=6.0              # yaml config parsing

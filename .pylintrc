@@ -1,0 +1,120 @@
+# Pylint configuration for kurigram_nursery_registry
+# Tuned so the GitHub Actions workflow (.github/workflows/pylint.yml) can run
+# against the project's Python scripts (mostly under skills/) without failing
+# on noise that does not represent real bugs.
+
+[MAIN]
+
+# Minimum pylint score required for the run to pass.
+# Current baseline is ~8.78/10, so 8.0 leaves comfortable headroom.
+fail-under = 8.0
+
+# Treat the repository root as a source root so pylint can resolve local
+# package-relative imports (e.g. `from scripts.utils import ...`).
+init-hook = 'import sys; sys.path.append(".")'
+
+# Persist results across runs to speed up re-runs.
+persistent = yes
+
+# Do not load any plugin extensions.
+load-plugins =
+
+# Limit CPU usage so CI runs are predictable.
+jobs = 1
+
+[MESSAGES CONTROL]
+
+# Disable noisy categories that do not represent real defects in this repo.
+# Rationale per category:
+#   missing-module-docstring / missing-class-docstring / missing-function-docstring
+#       -> helper scripts and skills snippets intentionally omit docstrings.
+#   line-too-long
+#       -> handled by editor / formatter; long URLs and SQL are common here.
+#   too-many-* / too-few-public-methods
+#       -> size heuristics that conflict with helper scripts that bundle ops.
+#   duplicate-code
+#       -> flagged heavily across skill validators that share boilerplate.
+#   broad-exception-caught / bare-except
+#       -> CLI wrappers and validators intentionally catch Exception to keep going.
+#   import-error
+#       -> resolved by installing requirements.txt; kept off to avoid
+#          env-specific false positives on optional skill dependencies.
+#   wrong-import-order / ungrouped-imports
+#       -> handled by isort if/when adopted; not enforced here.
+#   f-string-without-interpolation
+#       -> cosmetic; does not affect runtime.
+#   unspecified-encoding
+#       -> flagged on every open() call; encoding behaviour is intentional.
+#   subprocess-run-check
+#       -> subprocess callers in this repo explicitly handle return codes.
+#   global-statement
+#       -> used by design in a few module-level caches.
+#   redefined-outer-name
+#       -> pytest-style fixtures shadow outer names; benign here.
+disable =
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    line-too-long,
+    too-many-arguments,
+    too-many-locals,
+    too-many-branches,
+    too-many-statements,
+    too-many-instance-attributes,
+    too-many-public-methods,
+    too-few-public-methods,
+    too-many-return-statements,
+    too-many-nested-blocks,
+    duplicate-code,
+    broad-exception-caught,
+    bare-except,
+    import-error,
+    wrong-import-order,
+    ungrouped-imports,
+    f-string-without-interpolation,
+    unspecified-encoding,
+    subprocess-run-check,
+    global-statement,
+    redefined-outer-name,
+    protected-access,
+    raise-missing-from,
+    try-except-raise
+
+[REPORTS]
+
+# Only show the global score and any messages (no per-file report sections).
+score = yes
+reports = no
+msg-template = "{path}:{line}:{column}: {msg_id}: {msg} ({symbol})"
+output-format = colorized
+
+[FORMAT]
+
+# Mostly informational since line-too-long is disabled above.
+max-line-length = 120
+indent-string = "    "
+
+[VARIABLES]
+
+# Allow unused arguments in CLI / callback signatures (argparse handlers, etc.).
+dummy-variables-rgx = "_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+$)|dummy|^ignored_|^unused_"
+ignored-argument-names = "_.*|args|kwargs"
+
+[DESIGN]
+
+# Keep these relaxed so the disabled too-many-* rules above stay consistent.
+max-args = 10
+max-locals = 25
+max-returns = 10
+max-branches = 20
+max-statements = 60
+
+[IMPORTS]
+
+# Allow same-package imports without forcing __init__.py everywhere.
+allow-any-import-level = yes
+
+[EXCEPTIONS]
+
+# Allow over-general except clauses (paired with the broad-exception-caught disable).
+overgeneral-exceptions = builtins.Exception
