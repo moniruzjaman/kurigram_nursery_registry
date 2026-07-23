@@ -75,3 +75,24 @@ Stage Summary:
 - All 137 nurseries displayed with GPS, mobile, and inventory
 - Map view using OpenStreetMap embed
 - Clean, professional UI with green/earth-tone theme
+
+---
+Task ID: 5
+Agent: Pipeline Agent
+Task: Formalize Excel → JSON merge pipeline as reproducible Python script
+
+Work Log:
+- Created `scripts/merge_pipeline.py` — a reproducible, CLI-driven pipeline
+- Implemented 6-step pipeline: Read pivot → Read registry → Dedup → Cross-reference → Validate → Write
+- Added multi-strategy name matching (exact, part-match, substring) to improve cross-referencing
+- Added Unicode NFC normalization for Bengali text comparison (fixes ড় precomposed vs decomposed issue)
+- Added schema validation: upazila, region, district, mobile regex, GPS bounding box, inventory totals
+- Script auto-detects project root, writes to `src/lib/nursery-data.json` + `upload/merged_nursery_data.json`
+- Tested pipeline: 140 entries (126 matched + 11 pivot-only + 3 registry-only), 1,179,360 total plants
+- Source data quality: 88 inventory mismatches (total != seedlings + grafts) — pre-existing in Excel data
+
+Stage Summary:
+- `scripts/merge_pipeline.py` replaces the one-off manual process documented in Tasks 1–3
+- Run `python scripts/merge_pipeline.py` to regenerate JSON from updated Excel files
+- Matching improved from 119 to 126 entries via multi-strategy + Unicode normalization
+- 88 validation warnings are source data quality issues, not pipeline bugs
