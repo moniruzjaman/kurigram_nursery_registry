@@ -64,12 +64,16 @@ prompt
 tmp/
 
 # database (local SQLite)
+db/*.db
 db/*.db-journal
 db/*.db-wal
 db/*.db-shm
 
 # backups
 backups/
+
+# bundled tarball (large, regenerate as needed)
+*.tar
 
 # Skills directory (auto-generated, not part of app source)
 /skills/
